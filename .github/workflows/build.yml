@@ -1,0 +1,42 @@
+name: Build APK/So
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Setup NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26d
+    
+    - name: Fix compile.sh
+      run: |
+        echo '#!/bin/bash' > compile.sh
+        echo 'ndk-build -C .' >> compile.sh
+        chmod +x compile.sh
+    
+    - name: Build
+      run: ./compile.sh
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-output
+        path: |
+          libs/
+          obj/local/
+          *.so
+          
