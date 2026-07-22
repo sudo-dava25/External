@@ -386,8 +386,8 @@ void DrawMonster(ImDrawList *Draw) {
             float boxWidth = 125.0f;
             float boxHeight = 200.0f;
             
-            ImVec2 boxMin = ImVec2(en_posSc.X - boxWidth / 2, en_posSc.Y - boxHeight / 2);
-            ImVec2 boxMax = ImVec2(en_posSc.X + boxWidth / 2, en_posSc.Y + boxHeight / 2);
+            ImVec2 boxMin = ImVec2(en_posSc.X - boxWidth / 2, en_posSc.Y - boxHeight / 2 - 50);
+            ImVec2 boxMax = ImVec2(en_posSc.X + boxWidth / 2, en_posSc.Y + boxHeight / 2 - 50);
             
             ImColor boxColor = is_team ? ImColor(0, 255, 0) : ImColor(255, 0, 0);
             ImGui::GetForegroundDrawList()->AddRect(boxMin, boxMax, boxColor, 0, 0, 2.0f);
@@ -419,7 +419,7 @@ void DrawMonster(ImDrawList *Draw) {
         
         if (iconhero) {
             ImVec2 iconPos(HeroPos.X, HeroPos.Y);
-            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth);
+            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 0.5f);
         }
 
         if (drawMDistance) {
