@@ -80,10 +80,9 @@ std::string fshy(uintptr_t address)
 struct RoomPlayerInfo {
     std::string Name;
     std::string UserID;
-    std::string Squad;
-    std::string Rank;
     std::string Hero;
     std::string Spell;
+    std::string Rank;
 };
 
 RoomPlayerInfo PlayerB[5];
@@ -180,6 +179,55 @@ void Touch_Tap(int x, int y) {
      Touch_Down((float)x, (float)y);
      usleep(80000);
      Touch_Up();
+}
+
+void RoomInfoList() {
+    uintptr_t LogicBattleManager = getPtr641(libbase + 0x664d190);
+    if (!LogicBattleManager) return;
+
+    long playersList = getPtr641(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x10);
+    int playerCount = Read<int>(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x18);
+    if (playerCount <= 0 || !playersList) return;
+
+    long a1 = getPtr641(libbase + 0x664d190);
+    long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
+    long a32 = getPtr641((a2 << 1) >> 1);
+
+    long selfp = getPtr641(a32 + 0x50);
+    if (!selfp) return;
+
+    uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30);
+
+    int playerB = 0;
+    int playerR = 0;
+
+    for (int i = 0; i < playerCount; i++) {
+        long obj = getPtr641(playersList + i * 8);
+        if (!obj) continue;
+
+        auto nameObj = *(String**)(obj + 0x40);
+        std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
+
+        uint64_t lUid = Read<uint64_t>(obj + 0x20);
+        uint32_t zoneId = Read<uint32_t>(obj + 0x60);
+        std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
+
+        uint32_t heroid = Read<uint32_t>(obj + 0x4C);
+        int spellId = Read<int>(obj + 0x64);
+        uint32_t rank = Read<uint32_t>(obj + 0x128);
+        uint32_t myth = Read<uint32_t>(obj + 0x1CC);
+        uint32_t camp = Read<uint32_t>(obj + 0x30);
+
+        std::string hero = HeroToString(heroid);
+        std::string spell = SpellToString(spellId);
+        std::string rankStr = RankToString(rank, myth);
+
+        if (camp == myTeamCamp && playerB < 5) {
+            PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
+        } else if (playerR < 5) {
+            PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
+        }
+    }
 }
 
 void DrawMonster(ImDrawList *Draw) {
@@ -422,14 +470,54 @@ void Layout_tick_UI() {
     if (ImGui::BeginTabBar("####")) {
 
         if (ImGui::BeginTabItem(oxorany("ESP"))) {
+            ImGui::Spacing();
             ImGui::Checkbox(oxorany("Line"), &drawMHealth);
             ImGui::Checkbox(oxorany("IconHero"), &iconhero);
             ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
+            ImGui::Spacing();
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem(oxorany("Room Info"))) {
+            ImGui::Spacing();
+            
+            // Blue Team
+            ImGui::TextColored(ImColor(100, 200, 255), "=== BLUE TEAM ===");
+            ImGui::Separator();
+            for (int i = 0; i < 5; i++) {
+                if (!PlayerB[i].Name.empty()) {
+                    ImGui::Text("Name: %s", PlayerB[i].Name.c_str());
+                    ImGui::Text("Hero: %s | Spell: %s", PlayerB[i].Hero.c_str(), PlayerB[i].Spell.c_str());
+                    ImGui::Text("Rank: %s | ID: %s", PlayerB[i].Rank.c_str(), PlayerB[i].UserID.c_str());
+                    ImGui::Separator();
+                }
+            }
+            
+            ImGui::Spacing();
+            
+            // Red Team
+            ImGui::TextColored(ImColor(255, 100, 100), "=== RED TEAM ===");
+            ImGui::Separator();
+            for (int i = 0; i < 5; i++) {
+                if (!PlayerR[i].Name.empty()) {
+                    ImGui::Text("Name: %s", PlayerR[i].Name.c_str());
+                    ImGui::Text("Hero: %s | Spell: %s", PlayerR[i].Hero.c_str(), PlayerR[i].Spell.c_str());
+                    ImGui::Text("Rank: %s | ID: %s", PlayerR[i].Rank.c_str(), PlayerR[i].UserID.c_str());
+                    ImGui::Separator();
+                }
+            }
+            
+            ImGui::Spacing();
+            if (ImGui::Button(oxorany("Refresh Room Info"), ImVec2(200, 30))) {
+                RoomInfoList();
+            }
+            ImGui::Spacing();
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
+            ImGui::Spacing();
             static int theme = 0;
             const char* themes[] = { "Dark", "Light", "Classic" };
             if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
@@ -440,13 +528,21 @@ void Layout_tick_UI() {
             static float opacity = 1.0f;
             ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
             ImGui::GetStyle().Alpha = opacity;
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
             ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
-            if (ImGui::Button(oxorany("Exit Cheat"))) {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            if (ImGui::Button(oxorany("Exit Cheat"), ImVec2(180, 35))) {
                 main_thread_flag = false;
             }
-            if (ImGui::Button(oxorany("Unload Cheat"))) {
+            ImGui::SameLine();
+            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(180, 35))) {
                 exit(0);
             }
+            ImGui::Spacing();
             ImGui::EndTabItem();
         }
 
