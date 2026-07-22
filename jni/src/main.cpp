@@ -64,6 +64,9 @@ bool drawAlertUnderAttack = true;
 bool iconhero = true;
 bool drawESPBox = false;
 bool drawHealthBar = true;
+bool drawDistance = true;
+bool drawHealth = true;
+bool drawHeroName = true;
 long libbase = 0;
 
 bool lastRetriTriggered[20] = {false};
@@ -418,19 +421,32 @@ void DrawMonster(ImDrawList *Draw) {
         }
         
         if (iconhero) {
-        ImVec2 iconPos(HeroPos.X, HeroPos.Y + 35.0f);
-        DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 1.7f);
+            ImVec2 iconPos(HeroPos.X, HeroPos.Y);
+            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 11.0f);
         }
 
-        if (drawMDistance) {
+        if (drawDistance || drawHealth || drawHeroName) {
             std::string s;
-            s += std::to_string((int)Distance);
-            s += "m | ";
-            s += "Health: "+ std::to_string((int)Health);
-            s += " | " + fshy(Read<uintptr_t>(Objaddr + m_HeroName));
+            
+            if (drawDistance) {
+                s += std::to_string((int)Distance);
+                s += "m";
+            }
+            
+            if (drawHealth) {
+                if (!s.empty()) s += " | ";
+                s += "Health: "+ std::to_string((int)Health);
+            }
+            
+            if (drawHeroName) {
+                if (!s.empty()) s += " | ";
+                s += fshy(Read<uintptr_t>(Objaddr + m_HeroName));
+            }
 
-            auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
-            绘制字体描边(22.5,HeroPos.X - (textSize1.x / 2), HeroPos.Y,ImColor(248,248,255),s.c_str());
+            if (!s.empty()) {
+                auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
+                绘制字体描边(22.5, HeroPos.X - (textSize1.x / 2) + 30.0f, HeroPos.Y, ImColor(248,248,255), s.c_str());
+            }
         }
     }
 
@@ -594,8 +610,14 @@ void Layout_tick_UI() {
             
             ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
             ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
-            ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Info Display:"));
+            ImGui::Checkbox(oxorany("Show Distance"), &drawDistance);
+            ImGui::Checkbox(oxorany("Show Health"), &drawHealth);
+            ImGui::Checkbox(oxorany("Show Hero Name"), &drawHeroName);
             
             ImGui::Spacing();
             ImGui::Separator();
