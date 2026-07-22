@@ -414,53 +414,22 @@ void DrawMonster(ImDrawList *Draw) {
 }
 
 void Layout_tick_UI() {
-    // Minimalis Clean Style dengan Expandable
-    ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().FrameRounding = 6.0f;
-    ImGui::GetStyle().GrabRounding = 5.0f;
-    ImGui::GetStyle().WindowPadding = ImVec2(15, 12);
-    ImGui::GetStyle().ItemSpacing = ImVec2(10, 8);
-    ImGui::GetStyle().ItemInnerSpacing = ImVec2(8, 6);
-    ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImColor(20, 20, 28, 245);
-    ImGui::GetStyle().Colors[ImGuiCol_TitleBg] = ImColor(30, 30, 40, 255);
-    ImGui::GetStyle().Colors[ImGuiCol_TitleBgActive] = ImColor(35, 35, 45, 255);
-    ImGui::GetStyle().Colors[ImGuiCol_Header] = ImColor(35, 35, 45, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered] = ImColor(45, 45, 55, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_HeaderActive] = ImColor(55, 55, 65, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_Button] = ImColor(40, 40, 55, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_ButtonHovered] = ImColor(55, 55, 70, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_ButtonActive] = ImColor(70, 70, 85, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_CheckMark] = ImColor(100, 200, 255, 255);
-    ImGui::GetStyle().Colors[ImGuiCol_SliderGrab] = ImColor(100, 200, 255, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_SliderGrabActive] = ImColor(100, 200, 255, 255);
-    ImGui::GetStyle().Colors[ImGuiCol_Tab] = ImColor(30, 30, 40, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_TabHovered] = ImColor(45, 45, 55, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_TabActive] = ImColor(55, 55, 65, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_FrameBg] = ImColor(25, 25, 35, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_FrameBgHovered] = ImColor(35, 35, 45, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive] = ImColor(45, 45, 55, 200);
-    ImGui::GetStyle().Colors[ImGuiCol_Border] = ImColor(40, 40, 50, 100);
-    
-    // Window flags untuk expandable (bisa diresize)
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse;
-    ImGui::SetNextWindowSizeConstraints(ImVec2(400, 0), ImVec2(FLT_MAX, FLT_MAX));
-    
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::SetNextWindowSizeConstraints(ImVec2(800, 0), ImVec2(820, FLT_MAX));
+
     ImGui::Begin(oxorany("                  MLBB EXTERNAL - STARCOOL"), nullptr, window_flags);
 
     if (ImGui::BeginTabBar("####")) {
 
         if (ImGui::BeginTabItem(oxorany("ESP"))) {
-            ImGui::Spacing();
             ImGui::Checkbox(oxorany("Line"), &drawMHealth);
             ImGui::Checkbox(oxorany("IconHero"), &iconhero);
             ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
-            ImGui::Spacing();
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
-            ImGui::Spacing();
             static int theme = 0;
             const char* themes[] = { "Dark", "Light", "Classic" };
             if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
@@ -471,27 +440,19 @@ void Layout_tick_UI() {
             static float opacity = 1.0f;
             ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
             ImGui::GetStyle().Alpha = opacity;
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
             ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-            if (ImGui::Button(oxorany("Exit Cheat"), ImVec2(180, 35))) {
+            if (ImGui::Button(oxorany("Exit Cheat"))) {
                 main_thread_flag = false;
             }
-            ImGui::SameLine();
-            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(180, 35))) {
+            if (ImGui::Button(oxorany("Unload Cheat"))) {
                 exit(0);
             }
-            ImGui::Spacing();
             ImGui::EndTabItem();
         }
 
         ImGui::EndTabBar();
     }
-    
+
     DrawMonster(ImGui::GetForegroundDrawList());
     g_window = ImGui::GetCurrentWindow();
     ImGui::End();
