@@ -362,14 +362,14 @@ void DrawMonster(ImDrawList *Draw) {
         WorldToScreen(Z, &loc_posSc);
         
         bool isOutScreen;
-        float IconSize = abs_ScreenX / 50.0f;
-        Vector2 HeroPos = {en_posSc.X, en_posSc.Y};
+        float IconSize = abs_ScreenX / 80.0f;
+        Vector2 HeroPos = {en_posSc.X, en_posSc.Y + 30.0f};
         Vector2 Res;
         
         if (HeroPos.X < 0 || HeroPos.X > abs_ScreenX || HeroPos.Y < 0 ||
             HeroPos.Y > abs_ScreenY) {
             isOutScreen = true;
-            IconSize = abs_ScreenX / 75.0f;
+            IconSize = abs_ScreenX / 120.0f;
             FindPoint(HeroPos, Res, abs_ScreenX, abs_ScreenY, (IconSize / 3));
         } else {
             isOutScreen = false;
@@ -393,13 +393,16 @@ void DrawMonster(ImDrawList *Draw) {
             ImGui::GetForegroundDrawList()->AddRect(boxMin, boxMax, boxColor, 0, 0, 2.0f);
             
             if (drawHealthBar) {
-                float barWidth = 8.0f;
+                float barWidth = 6.0f;
                 float healthPercent = (float)Health / (float)maxHealth;
                 
-                ImVec2 healthBarMin = ImVec2(boxMax.x + 2.0f, boxMin.y);
-                ImVec2 healthBarMax = ImVec2(boxMax.x + 2.0f + barWidth, boxMin.y + (boxHeight * healthPercent));
+                ImVec2 healthBarMin = ImVec2(boxMax.x + 3.0f, boxMin.y);
+                ImVec2 healthBarMax = ImVec2(boxMax.x + 3.0f + barWidth, boxMax.y);
                 
-                ImGui::GetForegroundDrawList()->AddRectFilled(healthBarMin, ImVec2(healthBarMax.x, boxMax.y), ImColor(0, 0, 0));
+                ImGui::GetForegroundDrawList()->AddRectFilled(healthBarMin, healthBarMax, ImColor(0, 0, 0));
+                
+                ImVec2 healthFillMin = ImVec2(healthBarMin.x, boxMax.y - (boxHeight * healthPercent));
+                ImVec2 healthFillMax = healthBarMax;
                 
                 ImColor healthColor;
                 if (healthPercent > 0.5f) {
@@ -409,8 +412,8 @@ void DrawMonster(ImDrawList *Draw) {
                 } else {
                     healthColor = ImColor(255, 0, 0);
                 }
-                ImGui::GetForegroundDrawList()->AddRectFilled(healthBarMin, healthBarMax, healthColor);
-                ImGui::GetForegroundDrawList()->AddRect(healthBarMin, ImVec2(healthBarMax.x, boxMax.y), ImColor(255, 255, 255), 0, 0, 1.0f);
+                ImGui::GetForegroundDrawList()->AddRectFilled(healthFillMin, healthFillMax, healthColor);
+                ImGui::GetForegroundDrawList()->AddRect(healthBarMin, healthBarMax, ImColor(255, 255, 255), 0, 0, 1.0f);
             }
         }
         
