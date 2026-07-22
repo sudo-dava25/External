@@ -767,20 +767,9 @@ void Layout_tick_UI() {
                 ImGui::Separator();
                 
                 ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
-                ImGui::SameLine();
-                ImGui::HelpMarker(oxorany("Draw line dari player ke enemy"));
-                
                 ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
-                ImGui::SameLine();
-                ImGui::HelpMarker(oxorany("Tampilkan icon hero di atas enemy"));
-                
                 ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
-                ImGui::SameLine();
-                ImGui::HelpMarker(oxorany("Tampilkan jarak dan nama hero"));
-                
                 ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
-                ImGui::SameLine();
-                ImGui::HelpMarker(oxorany("Alert ketika Lord/Turtle di serang"));
                 
                 ImGui::Spacing();
                 ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
@@ -864,8 +853,6 @@ void Layout_tick_UI() {
                 if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 30))) {
                     exit(0);
                 }
-                
-                ImGui::Text(oxorany("Drag corner kanan bawah untuk resize UI"));
                 
                 ImGui::EndTabItem();
             }
