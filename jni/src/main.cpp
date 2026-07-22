@@ -66,6 +66,18 @@ bool drawESPBox = false;
 bool drawHealthBar = true;
 long libbase = 0;
 
+bool lastRetriTriggered[20] = {false};
+bool autoRetribution = false;
+bool AutoRetributionRed = false;
+bool AutoRetributionBlue = false;
+bool AutoRetributionLord = false;
+bool AutoRetributionTurtle = false;
+bool AutoRetributionCrab = false;
+bool AutoRetributionLito = false;
+
+float retriTouchX = 1575.0f;
+float retriTouchY = 661.0f;
+
 std::string fshy(uintptr_t address)
 {
     if (!address) return "";
@@ -161,10 +173,125 @@ void Touch_Tap(int x, int y) {
      Touch_Up();
 }
 
+struct MonsterData {
+    uintptr_t address;
+    Vector3 position;
+    float distance;
+    int health;
+    int maxHP;
+    bool isDead;
+    bool isVisible;
+    bool isValid;
+    char name[100];
+};
+
+MonsterData monster[20];
 int MonsterCount = 0;
 uintptr_t Oneself;
 
+void MonsterRetribution() {
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
+    BattleManager = getPtr641(BattleManager + 0xB8);
+    BattleManager = getPtr641(BattleManager);
+
+    if(!BattleManager) return;
+    Oneself = getPtr641(BattleManager + 0x50);
+    if(!Oneself) return;
+
+    Vector3 MyPosition;
+    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
+    
+    MonsterCount = 0;
+    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
+    if (Showmonster != 0) {
+        int monsterCount = Read<int>(Showmonster + 0x18);
+        uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
+        if (monsterCount >= 0 && monsterCount <= 100 && monsterDataPtr != 0) {
+            uintptr_t monsterDataArray = monsterDataPtr + 0x20;
+            int monsterfound = 0;
+            for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
+                uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
+                if (currentMonsterPtr == 0) continue;
+                int monsterID = Read<int>(currentMonsterPtr + 0x194);
+                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
+                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
+                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
+                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
+                bool mDead = (deadFlag != 0);
+                std::string mName = MonsterToString(monsterID);
+                if (mName.empty()) {
+                    if (monsterID == 2002) mName = "Lord";
+                    else if (monsterID == 2003) mName = "Turtle";
+                    else continue;
+                }
+                monster[monsterfound].address   = currentMonsterPtr;
+                monster[monsterfound].position  = monsterPos;
+                monster[monsterfound].distance  = Vector3::Distance(MyPosition, monsterPos);
+                monster[monsterfound].health    = monsterHP;
+                monster[monsterfound].maxHP     = monsterMaxHP;
+                monster[monsterfound].isDead    = mDead;
+                monster[monsterfound].isVisible = true;
+                monster[monsterfound].isValid   = true;
+                strncpy(monster[monsterfound].name, mName.c_str(), sizeof(monster[monsterfound].name) - 1);
+                monster[monsterfound].name[sizeof(monster[monsterfound].name) - 1] = '\0';
+                monsterfound++;
+            }
+            MonsterCount = monsterfound;
+        }
+    }
+}
+
+int CalculateRetriDamage(int Level, int KillWild) {
+    if (KillWild < 5) {
+        return 600 + (Level - 1) * 80;
+    } else {
+        return (600 + (Level - 1) * 80) + (300 + (Level - 1) * 40);
+    }
+}
+
+void CheckAndTriggerRetribution() {
+    if (!autoRetribution || !Oneself || MonsterCount <= 0) return;
+    int myLevel = Read<int>(Oneself + 0xA60);
+    int killWild = Read<int>(Oneself + 0x198);
+    int retriDmg = CalculateRetriDamage(myLevel, killWild);
+    for (int i = 0; i < MonsterCount; i++) {
+        if (!monster[i].isValid || monster[i].isDead) {
+            lastRetriTriggered[i] = false;
+            continue;
+        }
+        if (monster[i].distance > 5.0f) {
+            lastRetriTriggered[i] = false;
+            continue;
+        }
+        int id = Read<int>(monster[i].address + 0x194);
+        bool isTarget = false;
+        if (AutoRetributionLord && (id == 2002)) isTarget = true;
+        if (AutoRetributionTurtle && (id == 2003)) isTarget = true;
+        if (AutoRetributionBlue && (id == 2005)) isTarget = true;
+        if (AutoRetributionLito && (id == 2056)) isTarget = true;
+        if (AutoRetributionCrab && (id == 2005)) isTarget = true;
+        if (AutoRetributionRed && (id == 2004)) isTarget = true;        
+        if (!isTarget) {
+            lastRetriTriggered[i] = false;
+            continue;
+        }
+        if (monster[i].health <= retriDmg) {
+            if (!lastRetriTriggered[i]) {
+                Touch_Tap((int)retriTouchX, (int)retriTouchY);
+                lastRetriTriggered[i] = true;
+            }
+        } else {
+            lastRetriTriggered[i] = false;
+        }
+    }
+}
+
 void DrawMonster(ImDrawList *Draw) {
+    if (autoRetribution) {
+        ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(255, 255, 255, 180), 16);
+        ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(0, 0, 0, 255), 16, 2.5f);
+    }
+
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
@@ -405,77 +532,6 @@ void DrawMonster(ImDrawList *Draw) {
     }
 }
 
-struct MonsterData {
-    uintptr_t address;
-    Vector3 position;
-    float distance;
-    int health;
-    int maxHP;
-    bool isDead;
-    bool isVisible;
-    bool isValid;
-    char name[100];
-};
-
-MonsterData monster[20];
-
-int CalculateRetriDamage(int Level, int KillWild) {
-    if (KillWild < 5) {
-        return 600 + (Level - 1) * 80;
-    } else {
-        return (600 + (Level - 1) * 80) + (300 + (Level - 1) * 40);
-    }
-}
-
-void RoomInfoList() {
-    uintptr_t LogicBattleManager = getPtr641(libbase + 0x7641e18);
-    if (!LogicBattleManager) return;
-
-    long playersList = getPtr641(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x10);
-    int playerCount = Read<int>(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x18);
-    if (playerCount <= 0 || !playersList) return;
-
-    long a1 = getPtr641(libbase + 0x7641e18);
-    long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
-    long a32 = getPtr641((a2 << 1) >> 1);
-
-    long selfp = getPtr641(a32 + 0x50);
-
-    if (!selfp) return;
-
-    uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30);
-
-    int playerB = 0;
-    int playerR = 0;
-
-    for (int i = 0; i < playerCount; i++) {
-        long obj = getPtr641(playersList + i * 8);
-        if (!obj) continue;
-
-        auto nameObj = *(String**)(obj + 0x40);
-        std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
-
-        uint64_t lUid = Read<uint64_t>(obj + 0x20);
-        uint32_t zoneId = Read<uint32_t>(obj + 0x60);
-
-        uint32_t heroid = Read<uint32_t>(obj + 0x4C);
-        int spellId = Read<int>(obj + 0x64);
-        uint32_t rank = Read<uint32_t>(obj + 0x128);
-        uint32_t myth = Read<uint32_t>(obj + 0x1CC);
-        uint32_t camp = Read<uint32_t>(obj + 0x30);
-
-        std::string hero = HeroToString(heroid);
-        std::string spell = SpellToString(spellId);
-        std::string rankStr = RankToString(rank, myth);
-
-        if (camp == myTeamCamp && playerB < 5) {
-            PlayerB[playerB++] = { name, "", hero, rankStr, spell, "" };
-        } else if (playerR < 5) {
-            PlayerR[playerR++] = { name, "", hero, rankStr, spell, "" };
-        }
-    }
-}
-
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
@@ -547,6 +603,28 @@ void Layout_tick_UI() {
             
             ImGui::Spacing();
             ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
+            
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem(oxorany("Retribution"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("Auto Retribution:"));
+            ImGui::Separator();
+            
+            ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
+            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Target Selection:"));
+            ImGui::Checkbox(oxorany("Red Buff"), &AutoRetributionRed);
+            ImGui::Checkbox(oxorany("Blue Buff"), &AutoRetributionBlue);
+            ImGui::Checkbox(oxorany("Lord"), &AutoRetributionLord);
+            ImGui::Checkbox(oxorany("Turtle"), &AutoRetributionTurtle);
+            ImGui::Checkbox(oxorany("Crab"), &AutoRetributionCrab);
+            ImGui::Checkbox(oxorany("Lito"), &AutoRetributionLito);
             
             ImGui::EndTabItem();
         }
@@ -651,7 +729,8 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
     while (main_thread_flag) {
-        RoomInfoList();
+        MonsterRetribution();
+        CheckAndTriggerRetribution();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
