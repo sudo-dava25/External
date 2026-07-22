@@ -62,6 +62,7 @@ bool drawMDistance = true;
 bool drawMName = true;
 bool drawAlertUnderAttack = true;
 bool iconhero = true;
+bool drawCooldown = true;
 float RadiusCir = 50.0f;
 long libbase = 0;
 
@@ -282,6 +283,35 @@ void DrawMonster(ImDrawList *Draw) {
             auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
             绘制字体描边(22.5,HeroPos.X - (textSize1.x / 2), HeroPos.Y,ImColor(248,248,255),s.c_str());
         }
+        
+        // ===== COOLDOWN DISPLAY =====
+        if (drawCooldown) {
+            uintptr_t cooldownComp = ReadPtr(Objaddr + 0xa8);
+            if (cooldownComp) {
+                float cooldown = Read<float>(cooldownComp);
+                
+                if (cooldown > 0.0f) {
+                    std::string cooldownStr;
+                    if (cooldown >= 1.0f) {
+                        cooldownStr = std::to_string((int)cooldown) + "s";
+                    } else {
+                        cooldownStr = std::to_string((int)(cooldown * 100)) + "ms";
+                    }
+                    
+                    ImColor cooldownColor;
+                    if (cooldown <= 1.0f) {
+                        cooldownColor = ImColor(0, 255, 0);
+                    } else if (cooldown <= 3.0f) {
+                        cooldownColor = ImColor(255, 255, 0);
+                    } else {
+                        cooldownColor = ImColor(255, 100, 100);
+                    }
+                    
+                    绘制字体描边(20.0f, HeroPos.X - 25.0f, HeroPos.Y + 35.0f, cooldownColor, cooldownStr.c_str());
+                }
+            }
+        }
+        // ===== END COOLDOWN DISPLAY =====
     }
 
     long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
@@ -684,6 +714,7 @@ void Layout_tick_UI() {
             ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
             ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
             ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
+            ImGui::Checkbox(oxorany("Show Cooldown"), &drawCooldown);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
             
             ImGui::Spacing();
