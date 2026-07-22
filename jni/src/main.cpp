@@ -190,7 +190,7 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
+    uintptr_t BattleManager = getPtr641(libbase + 0x664d190);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
@@ -362,14 +362,14 @@ void DrawMonster(ImDrawList *Draw) {
         WorldToScreen(Z, &loc_posSc);
         
         bool isOutScreen;
-        float IconSize = abs_ScreenX / 26.0f;
+        float IconSize = abs_ScreenX / 50.0f;
         Vector2 HeroPos = {en_posSc.X, en_posSc.Y};
         Vector2 Res;
         
         if (HeroPos.X < 0 || HeroPos.X > abs_ScreenX || HeroPos.Y < 0 ||
             HeroPos.Y > abs_ScreenY) {
             isOutScreen = true;
-            IconSize = abs_ScreenX / 39.0f;
+            IconSize = abs_ScreenX / 75.0f;
             FindPoint(HeroPos, Res, abs_ScreenX, abs_ScreenY, (IconSize / 3));
         } else {
             isOutScreen = false;
@@ -391,28 +391,27 @@ void DrawMonster(ImDrawList *Draw) {
             
             ImColor boxColor = is_team ? ImColor(0, 255, 0) : ImColor(255, 0, 0);
             ImGui::GetForegroundDrawList()->AddRect(boxMin, boxMax, boxColor, 0, 0, 2.0f);
-        }
-        
-        if (drawHealthBar) {
-            float barWidth = 100.0f;
-            float barHeight = 12.5f;
-            float healthPercent = (float)Health / (float)maxHealth;
             
-            ImVec2 barMin = ImVec2(en_posSc.X - barWidth / 2, en_posSc.Y - 45.0f);
-            ImVec2 barMax = ImVec2(en_posSc.X + barWidth / 2, en_posSc.Y - 45.0f + barHeight);
-            ImGui::GetForegroundDrawList()->AddRectFilled(barMin, barMax, ImColor(0, 0, 0));
-            
-            ImVec2 healthBarMax = ImVec2(barMin.x + (barWidth * healthPercent), barMax.y);
-            ImColor healthColor;
-            if (healthPercent > 0.5f) {
-                healthColor = ImColor(0, 255, 0);
-            } else if (healthPercent > 0.25f) {
-                healthColor = ImColor(255, 255, 0);
-            } else {
-                healthColor = ImColor(255, 0, 0);
+            if (drawHealthBar) {
+                float barWidth = 8.0f;
+                float healthPercent = (float)Health / (float)maxHealth;
+                
+                ImVec2 healthBarMin = ImVec2(boxMax.x + 2.0f, boxMin.y);
+                ImVec2 healthBarMax = ImVec2(boxMax.x + 2.0f + barWidth, boxMin.y + (boxHeight * healthPercent));
+                
+                ImGui::GetForegroundDrawList()->AddRectFilled(healthBarMin, ImVec2(healthBarMax.x, boxMax.y), ImColor(0, 0, 0));
+                
+                ImColor healthColor;
+                if (healthPercent > 0.5f) {
+                    healthColor = ImColor(0, 255, 0);
+                } else if (healthPercent > 0.25f) {
+                    healthColor = ImColor(255, 255, 0);
+                } else {
+                    healthColor = ImColor(255, 0, 0);
+                }
+                ImGui::GetForegroundDrawList()->AddRectFilled(healthBarMin, healthBarMax, healthColor);
+                ImGui::GetForegroundDrawList()->AddRect(healthBarMin, ImVec2(healthBarMax.x, boxMax.y), ImColor(255, 255, 255), 0, 0, 1.0f);
             }
-            ImGui::GetForegroundDrawList()->AddRectFilled(barMin, healthBarMax, healthColor);
-            ImGui::GetForegroundDrawList()->AddRect(barMin, barMax, ImColor(255, 255, 255), 0, 0, 1.0f);
         }
         
         if (iconhero) {
