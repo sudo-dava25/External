@@ -420,8 +420,6 @@ struct MonsterData {
 };
 
 MonsterData monster[20];
-int MonsterCount = 0;
-uintptr_t Oneself;
 
 int CalculateRetriDamage(int Level, int KillWild) {
     if (KillWild < 5) {
