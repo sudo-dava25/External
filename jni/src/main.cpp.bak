@@ -202,7 +202,7 @@ void DrawMonster(ImDrawList *Draw) {
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x664d190); //dari sc gg
+    long a1 = getPtr641(libbase + 0x7641e18); //dari sc gg
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
@@ -229,7 +229,7 @@ void DrawMonster(ImDrawList *Draw) {
     class ShowPlayer 
     perlu update dari dump.cs*
     **/
-    size_t m_HeroName = 0x468; //m_HeroName
+    size_t m_HeroName = 0x8d8; //m_HeroName
     
     long selfp = getPtr641(a32 + m_LocalPlayerShow); // m_LocalPlayerShow;
     
@@ -451,7 +451,7 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x664d190);
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
@@ -678,7 +678,7 @@ void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize;
 ImGui::SetNextWindowSizeConstraints(ImVec2(800, 0), ImVec2(820, FLT_MAX));
 
-ImGui::Begin(oxorany("                  MLBB EXTERNAL - STARCOOL"), nullptr, window_flags);
+ImGui::Begin(oxorany("                  are u gay?"), nullptr, window_flags);
 
 
     if (ImGui::BeginTabBar("####")) {
