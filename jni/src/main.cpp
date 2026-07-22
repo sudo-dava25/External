@@ -64,16 +64,17 @@ bool drawAlertUnderAttack = true;
 bool iconhero = true;
 float RadiusCir = 50.0f;
 long libbase = 0;
+
 std::string fshy(uintptr_t address)
 {
-    if (!address) return "";
+    if (!address) return "";
 
-    auto stringLength = Read<uint32_t>(address + 0x10);
-    char16_t buffer[255] = { 0 };
+    auto stringLength = Read<uint32_t>(address + 0x10);
+    char16_t buffer[255] = { 0 };
 
-    pvm(reinterpret_cast<void *>(address + 0x14), reinterpret_cast<void *>(buffer), static_cast<size_t>(stringLength) * 2, false);
+    pvm(reinterpret_cast<void *>(address + 0x14), reinterpret_cast<void *>(buffer), static_cast<size_t>(stringLength) * 2, false);
 
-    return utf16_to_utf8(buffer, stringLength);
+    return utf16_to_utf8(buffer, stringLength);
 }
 
 struct RoomPlayerInfo {
@@ -100,7 +101,6 @@ struct String {
         return temp;
     }
 };
-
 
 uintptr_t GetMainCamera() {
     auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
@@ -182,27 +182,11 @@ void Touch_Tap(int x, int y) {
      Touch_Up();
 }
 
-bool lastRetriTriggered[20] = {false};
-bool autoRetribution = false;
-bool AutoRetributionRed = false;
-bool AutoRetributionBlue = false;
-bool AutoRetributionLord = false;
-bool AutoRetributionTurtle = false;
-bool AutoRetributionCrab = false;
-bool AutoRetributionLito = false;        
-
-float retriTouchX = 1575;
-float retriTouchY = 661;
-
 void DrawMonster(ImDrawList *Draw) {
-    if (autoRetribution) {
-        ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(255, 255, 255, 180), 16);
-        ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(0, 0, 0, 255), 16, 2.5f);
-    }
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x7641e18); //dari sc gg
+    long a1 = getPtr641(libbase + 0x7641e18);
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
@@ -210,28 +194,28 @@ void DrawMonster(ImDrawList *Draw) {
     class BattleManager
     perlu update dari dump.cs*
     **/
-    size_t m_LocalPlayerShow = 0x50; //m_LocalPlayerShow
-    size_t m_ShowPlayers = 0x78; //m_ShowPlayers
-    size_t m_ShowMonsters = 0x80; //m_ShowMonsters
+    size_t m_LocalPlayerShow = 0x50;
+    size_t m_ShowPlayers = 0x78;
+    size_t m_ShowMonsters = 0x80;
     
     /**
     class ShowEntity 
     perlu update dari dump.cs*
     **/
-    size_t m_iType = 0x80; //m_iType
+    size_t m_iType = 0x80;
 
-    size_t m_Hp = 0x1ac; //m_Hp
-    size_t m_HpMax = 0x1b0; //m_HpMax
-    size_t m_bDeath = 0xcd; //m_bDeath
-    size_t m_bSameCampType = 0x2b1; //m_bSameCampType
-    size_t m_vCachePosition = 0x294; //m_vCachePosition
+    size_t m_Hp = 0x1ac;
+    size_t m_HpMax = 0x1b0;
+    size_t m_bDeath = 0xcd;
+    size_t m_bSameCampType = 0x2b1;
+    size_t m_vCachePosition = 0x294;
     /**
     class ShowPlayer 
     perlu update dari dump.cs*
     **/
-    size_t m_HeroName = 0x8d8; //m_HeroName
+    size_t m_HeroName = 0x8d8;
     
-    long selfp = getPtr641(a32 + m_LocalPlayerShow); // m_LocalPlayerShow;
+    long selfp = getPtr641(a32 + m_LocalPlayerShow);
     
     auto main_cam = GetMainCamera();
 
@@ -308,7 +292,7 @@ void DrawMonster(ImDrawList *Draw) {
         
         if (iconhero) {
             ImVec2 iconPos(HeroPos.X, HeroPos.Y);
-        DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth);
+            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth);
         }
 
         if (drawMDistance) {
@@ -323,8 +307,8 @@ void DrawMonster(ImDrawList *Draw) {
         }
 
     }
-    long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20; // 0x70 m_ShowPlayer
-    uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18); // 0x70 m_ShowPlayer
+    long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
+    uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
     
     for (int i = 0; i < stop_monster; i++) {
         auto Objaddr = getPtr641(monster + ((i << 3) / 1));
@@ -333,7 +317,7 @@ void DrawMonster(ImDrawList *Draw) {
             continue;
         }
 
-        auto is_team = Read<bool>(Objaddr + m_bSameCampType); // m_bSameCampType
+        auto is_team = Read<bool>(Objaddr + m_bSameCampType);
         if (is_team) {
             continue;
         }
@@ -341,18 +325,18 @@ void DrawMonster(ImDrawList *Draw) {
         auto mHeroID = Read<int>(Objaddr + 0x194);        
         auto type = Read<int>(Objaddr + m_iType);
         
-        auto death = Read<bool>(Objaddr + m_bDeath); // m_bDeath
+        auto death = Read<bool>(Objaddr + m_bDeath);
         if (death) {
             continue;
         }
 
-        int Health = Read<uint64_t>(Objaddr + m_Hp); // m_hP
+        int Health = Read<uint64_t>(Objaddr + m_Hp);
         if(Health <= 0)
         {
             continue;
         }
         
-        int maxHealth = Read<uint64_t>(Objaddr + m_HpMax); // m_MaxHp
+        int maxHealth = Read<uint64_t>(Objaddr + m_HpMax);
         if(maxHealth <= 0)
         {
             continue;
@@ -402,12 +386,9 @@ void DrawMonster(ImDrawList *Draw) {
            
              std::string monsterName = MonsterToString(mHeroID);
              if (monsterName.empty()) continue;             
-             //auto bShowEntityLayer = Read<bool>(Objaddr + 0x32c);               
+           
              bool isImportantMonster = (mHeroID == 2002 || mHeroID == 2220 || mHeroID == 2003 || mHeroID == 2221 || 
                                           mHeroID == 2004 || mHeroID == 2005 || mHeroID == 2222 || mHeroID == 2223);
-                
-             //bool shouldShow = !bShowEntityLayer || isImportantMonster;               
-             //if (!shouldShow) continue;            
            
              bool isEventMonster = (mHeroID >= 2220 && mHeroID <= 2232);
              ImColor nameColor = isEventMonster ? IM_COL32(255, 215, 0, 255) : IM_COL32(220, 180, 255, 255);     
@@ -432,323 +413,84 @@ void DrawMonster(ImDrawList *Draw) {
     }
 }
 
-struct MonsterData {
-    uintptr_t address;
-    Vector3 position;
-    float distance;
-    int health;
-    int maxHP;
-    bool isDead;
-    bool isVisible;
-    bool isValid;
-    char name[100];
-};
-
-MonsterData monster[20];
-
-int MonsterCount = 0;
-
-uintptr_t Oneself;
-
-void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
-    BattleManager = getPtr641(BattleManager + 0xB8);
-    BattleManager = getPtr641(BattleManager);
-
-    if(!BattleManager) return;
-    Oneself = getPtr641(BattleManager + 0x50);
-    if(!Oneself) return;
-
-    Vector3 MyPosition;
-    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
-    
-    MonsterCount = 0;
-    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
-    if (Showmonster != 0) {
-        int monsterCount = Read<int>(Showmonster + 0x18);
-        uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
-        if (monsterCount >= 0 && monsterCount <= 100 && monsterDataPtr != 0) {
-            uintptr_t monsterDataArray = monsterDataPtr + 0x20;
-            int monsterfound = 0;
-            for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
-                uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
-                if (currentMonsterPtr == 0) continue;
-                int monsterID = Read<int>(currentMonsterPtr + 0x194);
-                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
-                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
-                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
-                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
-                bool mDead = (deadFlag != 0);
-                std::string mName = MonsterToString(monsterID);
-                if (mName.empty()) {
-                    if (monsterID == 2002) mName = "Lord";
-                    else if (monsterID == 2003) mName = "Turtle";
-                    else continue;
-                }
-                monster[monsterfound].address   = currentMonsterPtr;
-                monster[monsterfound].position  = monsterPos;
-                monster[monsterfound].distance  = Vector3::Distance(MyPosition, monsterPos);
-                monster[monsterfound].health    = monsterHP;
-                monster[monsterfound].maxHP     = monsterMaxHP;
-                monster[monsterfound].isDead    = mDead;
-                monster[monsterfound].isVisible = true;
-                monster[monsterfound].isValid   = true;
-                strncpy(monster[monsterfound].name, mName.c_str(), sizeof(monster[monsterfound].name) - 1);
-                monster[monsterfound].name[sizeof(monster[monsterfound].name) - 1] = '\0';
-                monsterfound++;
-            }
-            MonsterCount = monsterfound;
-        }
-    }
-}
-
-int CalculateRetriDamage(int Level, int KillWild) {
-    if (KillWild < 5) {
-        return 600 + (Level - 1) * 80;
-    } else {
-        return (600 + (Level - 1) * 80) + (300 + (Level - 1) * 40);
-    }
-}
-
-void CheckAndTriggerRetribution() {
-    if (!autoRetribution && !Oneself && MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0xA60);
-    int killWild = Read<int>(Oneself + 0x198);
-    int retriDmg = CalculateRetriDamage(myLevel, killWild);
-    for (int i = 0; i < MonsterCount; i++) {
-        if (!monster[i].isValid || monster[i].isDead) {
-            lastRetriTriggered[i] = false;
-            continue;
-        }
-        if (monster[i].distance > 5.0f) {
-            lastRetriTriggered[i] = false;
-            continue;
-        }
-        int id = Read<int>(monster[i].address + 0x194);
-        bool isTarget = false;
-        if (AutoRetributionLord && (id == 2002)) isTarget = true;
-        if (AutoRetributionTurtle && (id == 2003)) isTarget = true;
-        if (AutoRetributionBlue && (id == 2005)) isTarget = true;
-        if (AutoRetributionLito && (id == 2056)) isTarget = true;
-        if (AutoRetributionCrab && (id == 2005)) isTarget = true;
-        if (AutoRetributionRed && (id == 2004)) isTarget = true;        
-        if (!isTarget) {
-            lastRetriTriggered[i] = false;
-            continue;
-        }
-        if (monster[i].health <= retriDmg) {
-            if (!lastRetriTriggered[i]) {
-                Touch_Tap(retriTouchX, retriTouchY);
-                lastRetriTriggered[i] = true;
-            }
-        } else {
-            lastRetriTriggered[i] = false;
-        }
-    }
-}
-/*
-void RoomInfoList() {
-    uintptr_t LogicBattleManager = getPtr641(libbase + 0x664d190);
-    if (!LogicBattleManager) return;
-
-    long playersList = getPtr641(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x10); // m_ShowPlayers
-    int playerCount = Read<int>(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x18);
-    if (playerCount <= 0 || !playersList) return;
-
-    long a1 = getPtr641(libbase + 0x664d190); // BattleManager base (lagi, bisa pakai LogicBattleManager juga)
-    long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
-    long a32 = getPtr641((a2 << 1) >> 1);
-
-    long selfp = getPtr641(a32 + 0x50); // m_LocalPlayerShow
-
-    if (!selfp) return;
-
-    uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30); // offset iCamp dari dump.cs
-
-    int playerB = 0;
-    int playerR = 0;
-
-    for (int i = 0; i < playerCount; i++) {
-        long obj = getPtr641(playersList + i * 8);
-        if (!obj) continue;
-
-        auto nameObj = *(String**)(obj + 0x40);
-        std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
-
-        uint64_t lUid = Read<uint64_t>(obj + 0x20);
-        uint32_t zoneId = Read<uint32_t>(obj + 0x60);
-        std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
-
-        uint32_t heroid = Read<uint32_t>(obj + 0x4C);
-        int spellId = Read<int>(obj + 0x64);
-        uint32_t rank = Read<uint32_t>(obj + 0x128);
-        uint32_t myth = Read<uint32_t>(obj + 0x1CC);
-        uint32_t camp = Read<uint32_t>(obj + 0x30);
-
-        std::string hero = HeroToString(heroid);
-        std::string spell = SpellToString(spellId);
-        std::string rankStr = RankToString(rank, myth);
-
-        if (camp == myTeamCamp && playerB < 5) {
-            PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
-        } else if (playerR < 5) {
-            PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
-        }
-    }
-}*/
-
-int MinimapSize = 342;
-int MinimapPos = 76;
-bool MinimapIcon = true;
-bool HideLine = false;
-
-float g_MinimapScale = 74.11f;
-float g_Res0_MultX = 1.0f;
-float g_Res0_MultY = 1.0f;
-float g_Res1_OffsetX = 0.0f;
-float g_Res1_OffsetY = 0.0f;
-int g_ICSize = 38;
-
-Vector2 WorldToMinimap(Vector3 HeroPosition) {
-    float angle = 314.60f * 0.017453292519943295f;
-    float angleCos = std::cos(angle);
-    float angleSin = std::sin(angle);
-
-    Vector2 Res0;
-    Res0.X = ((angleCos * HeroPosition.X - angleSin * (-HeroPosition.Z)) / g_MinimapScale) * g_Res0_MultX;
-    Res0.Y = ((angleSin * HeroPosition.Y + angleCos * (-HeroPosition.Z)) / g_MinimapScale) * g_Res0_MultY;
-
-    Vector2 Res1;
-    Res1.X = (Res0.X * MinimapSize) + MinimapPos + MinimapSize / 2.0f + g_Res1_OffsetX;
-    Res1.Y = (Res0.Y * MinimapSize) + MinimapSize / 2.0f + g_Res1_OffsetY;
-
-    return Res1;
-}
-
-void DrawMinimapESP(ImDrawList* draw) {
-    if (!MinimapIcon) return;
-
-    long a1 = getPtr641(libbase + 0x7641e18);
-    if (!a1) return;
-
-    long a2 = getPtr641(a1 + 0xB8);
-    if (!a2) return;
-
-    long a32 = getPtr641(a2);
-    if (!a32) return;
-
-    // Offset field
-    size_t m_ShowPlayers     = 0x78;
-    size_t m_bSameCampType   = 0x2b1;
-    size_t m_bDeath          = 0xcd;
-    size_t m_vCachePosition  = 0x294;
-
-    long showList = getPtr641(a32 + m_ShowPlayers);
-    if (!showList) return;
-
-    long playerList = getPtr641(showList + 0x10);
-    if (!playerList) return;
-    playerList += 0x20;
-
-    uint playerCount = Read<uint>(showList + 0x18);
-    for (int i = 0; i < playerCount; i++) {
-        long Objaddr = getPtr641(playerList + (i << 3));
-        if (!Objaddr) continue;
-
-        if (Read<bool>(Objaddr + m_bSameCampType)) continue;
-        if (Read<bool>(Objaddr + m_bDeath)) continue;
-
-        Vector3A pos{};
-        vm_readv(Objaddr + m_vCachePosition, &pos, sizeof(pos));
-        if (pos.X == 0 && pos.Y == 0 && pos.Z == 0) continue;
-
-        Vector2 minimapPos = WorldToMinimap({ pos.X, pos.Y, pos.Z });
-        draw->AddCircleFilled(ImVec2(minimapPos.X, minimapPos.Y), g_ICSize / 2.0f, IM_COL32(255, 0, 0, 255));
-    }
-
-    if (!HideLine) {
-        draw->AddRect(
-            ImVec2(MinimapPos, 0),
-            ImVec2(MinimapPos + MinimapSize, MinimapSize),
-            IM_COL32(255, 255, 255, 255)
-        );
-    }
-}
 void Layout_tick_UI() {
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize;
-ImGui::SetNextWindowSizeConstraints(ImVec2(800, 0), ImVec2(820, FLT_MAX));
-
-ImGui::Begin(oxorany("                  MLBB EXTERNAL - STARCOOL"), nullptr, window_flags);
-
+    // Minimalis Clean Style
+    ImGui::GetStyle().WindowRounding = 8.0f;
+    ImGui::GetStyle().FrameRounding = 4.0f;
+    ImGui::GetStyle().GrabRounding = 4.0f;
+    ImGui::GetStyle().WindowPadding = ImVec2(12, 8);
+    ImGui::GetStyle().ItemSpacing = ImVec2(8, 6);
+    ImGui::GetStyle().ItemInnerSpacing = ImVec2(6, 4);
+    ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImColor(20, 20, 28, 240);
+    ImGui::GetStyle().Colors[ImGuiCol_TitleBg] = ImColor(30, 30, 40, 255);
+    ImGui::GetStyle().Colors[ImGuiCol_TitleBgActive] = ImColor(35, 35, 45, 255);
+    ImGui::GetStyle().Colors[ImGuiCol_Header] = ImColor(35, 35, 45, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered] = ImColor(45, 45, 55, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_HeaderActive] = ImColor(55, 55, 65, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_Button] = ImColor(40, 40, 55, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_ButtonHovered] = ImColor(55, 55, 70, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_ButtonActive] = ImColor(70, 70, 85, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_CheckMark] = ImColor(100, 200, 255, 255);
+    ImGui::GetStyle().Colors[ImGuiCol_SliderGrab] = ImColor(100, 200, 255, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_SliderGrabActive] = ImColor(100, 200, 255, 255);
+    ImGui::GetStyle().Colors[ImGuiCol_Tab] = ImColor(30, 30, 40, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_TabHovered] = ImColor(45, 45, 55, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_TabActive] = ImColor(55, 55, 65, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_FrameBg] = ImColor(25, 25, 35, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_FrameBgHovered] = ImColor(35, 35, 45, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive] = ImColor(45, 45, 55, 200);
+    ImGui::GetStyle().Colors[ImGuiCol_Border] = ImColor(40, 40, 50, 100);
+    
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse;
+    ImGui::SetNextWindowSizeConstraints(ImVec2(320, 0), ImVec2(350, FLT_MAX));
+    
+    ImGui::Begin(oxorany("MLBB EX"), nullptr, window_flags);
 
     if (ImGui::BeginTabBar("####")) {
 
         if (ImGui::BeginTabItem(oxorany("ESP"))) {
+            ImGui::Spacing();
             ImGui::Checkbox(oxorany("Line"), &drawMHealth);
             ImGui::Checkbox(oxorany("IconHero"), &iconhero);
             ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem(oxorany("Retri"))) {
-            ImGui::Checkbox(oxorany("Auto Retri"), &autoRetribution);
-            ImGui::SliderFloat(oxorany("Adjust X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-            ImGui::SliderFloat(oxorany("Adjust Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
-
-            ImGui::Checkbox(oxorany("Buff Red"), &AutoRetributionRed);
-            ImGui::Checkbox(oxorany("Buff Blue"), &AutoRetributionBlue);
-            ImGui::Checkbox(oxorany("Lord"), &AutoRetributionLord);
-            ImGui::Checkbox(oxorany("Turtle"), &AutoRetributionTurtle);
-            ImGui::Checkbox(oxorany("Crab"), &AutoRetributionCrab);
-            ImGui::Checkbox(oxorany("Lito"), &AutoRetributionLito);
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem(oxorany("Minimap"))) {
-            if (ImGui::CollapsingHeader("Minimap Setting", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Checkbox("Minimap", &MinimapIcon);
-                ImGui::SameLine();
-                ImGui::Checkbox("Hide Line", &HideLine);
-                ImGui::SliderInt("Minimap Size", &MinimapSize, 100, 600);
-                ImGui::SliderInt("Minimap Pos X", &MinimapPos, 0, 800);
-                ImGui::SliderInt("Size", &g_ICSize, 1, 100);
-                ImGui::Text("WorldToMinimap Tweak:");
-                ImGui::SliderFloat("Res0 X Mult", &g_Res0_MultX, 0.1f, 3.0f);
-                ImGui::SliderFloat("Res0 Y Mult", &g_Res0_MultY, 0.1f, 3.0f);
-                ImGui::SliderFloat("Res1 Offset X", &g_Res1_OffsetX, -200.0f, 200.0f);
-                ImGui::SliderFloat("Res1 Offset Y", &g_Res1_OffsetY, -200.0f, 200.0f);
-                ImGui::SliderFloat("Minimap Scale", &g_MinimapScale, 10.0f, 150.0f);
-            }
+            ImGui::Spacing();
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
+            ImGui::Spacing();
             static int theme = 0;
             const char* themes[] = { "Dark", "Light", "Classic" };
-            if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
+            if (ImGui::Combo(oxorany("Theme"), &theme, themes, IM_ARRAYSIZE(themes))) {
                 if (theme == 0) ImGui::StyleColorsDark();
                 if (theme == 1) ImGui::StyleColorsLight();
                 if (theme == 2) ImGui::StyleColorsClassic();
             }
             static float opacity = 1.0f;
-            ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+            ImGui::SliderFloat(oxorany("Opacity"), &opacity, 0.1f, 1.0f);
             ImGui::GetStyle().Alpha = opacity;
-            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
-            if (ImGui::Button(oxorany("Exit Cheat"))) {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::Text(oxorany("FPS: %.1f"), ImGui::GetIO().Framerate);
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            if (ImGui::Button(oxorany("Exit"), ImVec2(140, 30))) {
                 main_thread_flag = false;
             }
-            if (ImGui::Button(oxorany("Unload Cheat"))) {
+            ImGui::SameLine();
+            if (ImGui::Button(oxorany("Unload"), ImVec2(140, 30))) {
                 exit(0);
             }
+            ImGui::Spacing();
             ImGui::EndTabItem();
         }
 
         ImGui::EndTabBar();
     }
-
- 
-    if (MinimapIcon) DrawMinimapESP(ImGui::GetForegroundDrawList());
+    
     DrawMonster(ImGui::GetForegroundDrawList());
     g_window = ImGui::GetCurrentWindow();
     ImGui::End();
@@ -768,11 +510,8 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
         return -1;
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
-    ImGui::GetStyle().WindowRounding = 25.0f;
+    ImGui::GetStyle().WindowRounding = 8.0f;
     while (main_thread_flag) {
-        MonsterRetribution();
-        CheckAndTriggerRetribution();
-        //RoomInfoList();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
@@ -782,4 +521,3 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     Touch_Close();
     return 0;
 }
-
