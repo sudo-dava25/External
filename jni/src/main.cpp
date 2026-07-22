@@ -414,14 +414,14 @@ void DrawMonster(ImDrawList *Draw) {
 }
 
 void Layout_tick_UI() {
-    // Minimalis Clean Style
-    ImGui::GetStyle().WindowRounding = 8.0f;
-    ImGui::GetStyle().FrameRounding = 4.0f;
-    ImGui::GetStyle().GrabRounding = 4.0f;
-    ImGui::GetStyle().WindowPadding = ImVec2(12, 8);
-    ImGui::GetStyle().ItemSpacing = ImVec2(8, 6);
-    ImGui::GetStyle().ItemInnerSpacing = ImVec2(6, 4);
-    ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImColor(20, 20, 28, 240);
+    // Minimalis Clean Style dengan Expandable
+    ImGui::GetStyle().WindowRounding = 25.0f;
+    ImGui::GetStyle().FrameRounding = 6.0f;
+    ImGui::GetStyle().GrabRounding = 5.0f;
+    ImGui::GetStyle().WindowPadding = ImVec2(15, 12);
+    ImGui::GetStyle().ItemSpacing = ImVec2(10, 8);
+    ImGui::GetStyle().ItemInnerSpacing = ImVec2(8, 6);
+    ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImColor(20, 20, 28, 245);
     ImGui::GetStyle().Colors[ImGuiCol_TitleBg] = ImColor(30, 30, 40, 255);
     ImGui::GetStyle().Colors[ImGuiCol_TitleBgActive] = ImColor(35, 35, 45, 255);
     ImGui::GetStyle().Colors[ImGuiCol_Header] = ImColor(35, 35, 45, 200);
@@ -441,10 +441,11 @@ void Layout_tick_UI() {
     ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive] = ImColor(45, 45, 55, 200);
     ImGui::GetStyle().Colors[ImGuiCol_Border] = ImColor(40, 40, 50, 100);
     
+    // Window flags untuk expandable (bisa diresize)
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse;
-    ImGui::SetNextWindowSizeConstraints(ImVec2(320, 0), ImVec2(350, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(400, 0), ImVec2(FLT_MAX, FLT_MAX));
     
-    ImGui::Begin(oxorany("MLBB EX"), nullptr, window_flags);
+    ImGui::Begin(oxorany("                  MLBB EXTERNAL - STARCOOL"), nullptr, window_flags);
 
     if (ImGui::BeginTabBar("####")) {
 
@@ -462,26 +463,26 @@ void Layout_tick_UI() {
             ImGui::Spacing();
             static int theme = 0;
             const char* themes[] = { "Dark", "Light", "Classic" };
-            if (ImGui::Combo(oxorany("Theme"), &theme, themes, IM_ARRAYSIZE(themes))) {
+            if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
                 if (theme == 0) ImGui::StyleColorsDark();
                 if (theme == 1) ImGui::StyleColorsLight();
                 if (theme == 2) ImGui::StyleColorsClassic();
             }
             static float opacity = 1.0f;
-            ImGui::SliderFloat(oxorany("Opacity"), &opacity, 0.1f, 1.0f);
+            ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
             ImGui::GetStyle().Alpha = opacity;
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
-            ImGui::Text(oxorany("FPS: %.1f"), ImGui::GetIO().Framerate);
+            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
-            if (ImGui::Button(oxorany("Exit"), ImVec2(140, 30))) {
+            if (ImGui::Button(oxorany("Exit Cheat"), ImVec2(180, 35))) {
                 main_thread_flag = false;
             }
             ImGui::SameLine();
-            if (ImGui::Button(oxorany("Unload"), ImVec2(140, 30))) {
+            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(180, 35))) {
                 exit(0);
             }
             ImGui::Spacing();
@@ -510,7 +511,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
         return -1;
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
-    ImGui::GetStyle().WindowRounding = 8.0f;
+    ImGui::GetStyle().WindowRounding = 25.0f;
     while (main_thread_flag) {
         drawBegin();
         Layout_tick_UI();
