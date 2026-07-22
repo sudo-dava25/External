@@ -64,6 +64,7 @@ bool drawAlertUnderAttack = true;
 bool iconhero = true;
 float RadiusCir = 50.0f;
 long libbase = 0;
+
 std::string fshy(uintptr_t address)
 {
     if (!address) return "";
@@ -100,7 +101,6 @@ struct String {
         return temp;
     }
 };
-
 
 uintptr_t GetMainCamera() {
     auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
@@ -145,31 +145,9 @@ void FindPoint(Vector2 origin, Vector2 &point, int screenwidth, int screenheight
 }
 
 int ListMonsterId[] = {
-        2002,
-        2003,
-        2004,
-        2005,
-        2006,
-        2008,
-        2009,
-        2011,
-        2012,
-        2013,
-        2056,
-        2059,
-        2072,
-        2220,
-        2221,
-        2222,
-        2223,
-        2224,
-        2225,
-        2226,
-        2227,
-        2228,
-        2229,
-        2230,
-        2232,
+        2002, 2003, 2004, 2005, 2006, 2008, 2009, 2011, 2012, 2013,
+        2056, 2059, 2072, 2220, 2221, 2222, 2223, 2224, 2225, 2226,
+        2227, 2228, 2229, 2230, 2232,
 };
 
 bool bMonster(int iValue) {
@@ -202,41 +180,26 @@ void DrawMonster(ImDrawList *Draw) {
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x7641e18); //dari sc gg
+    long a1 = getPtr641(libbase + 0x7641e18);
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
-    /**
-    class BattleManager
-    perlu update dari dump.cs*
-    **/
-    size_t m_LocalPlayerShow = 0x50; //m_LocalPlayerShow
-    size_t m_ShowPlayers = 0x78; //m_ShowPlayers
-    size_t m_ShowMonsters = 0x80; //m_ShowMonsters
+    size_t m_LocalPlayerShow = 0x50;
+    size_t m_ShowPlayers = 0x78;
+    size_t m_ShowMonsters = 0x80;
     
-    /**
-    class ShowEntity 
-    perlu update dari dump.cs*
-    **/
-    size_t m_iType = 0x80; //m_iType
-
-    size_t m_Hp = 0x1ac; //m_Hp
-    size_t m_HpMax = 0x1b0; //m_HpMax
-    size_t m_bDeath = 0xcd; //m_bDeath
-    size_t m_bSameCampType = 0x2b1; //m_bSameCampType
-    size_t m_vCachePosition = 0x294; //m_vCachePosition
-    /**
-    class ShowPlayer 
-    perlu update dari dump.cs*
-    **/
-    size_t m_HeroName = 0x8d8; //m_HeroName
+    size_t m_iType = 0x80;
+    size_t m_Hp = 0x1ac;
+    size_t m_HpMax = 0x1b0;
+    size_t m_bDeath = 0xcd;
+    size_t m_bSameCampType = 0x2b1;
+    size_t m_vCachePosition = 0x294;
+    size_t m_HeroName = 0x8d8;
     
-    long selfp = getPtr641(a32 + m_LocalPlayerShow); // m_LocalPlayerShow;
+    long selfp = getPtr641(a32 + m_LocalPlayerShow);
     
     auto main_cam = GetMainCamera();
-
     auto camera = Read<uintptr_t>(main_cam + 0x10);
-    
     auto ViewMatrix = Read<Camera>(camera + 0x5C);
     _vMatrix = ViewMatrix.projectionMatrix * ViewMatrix.worldToCameraMatrix;
 
@@ -262,14 +225,12 @@ void DrawMonster(ImDrawList *Draw) {
         }
 
         int Health = Read<uint64_t>(Objaddr + m_Hp);
-        if(Health <= 0)
-        {
+        if(Health <= 0) {
             continue;
         }
 
         int maxHealth = Read<uint64_t>(Objaddr + m_HpMax);
-        if(Health <= 0)
-        {
+        if(Health <= 0) {
             continue;
         }
 
@@ -308,7 +269,7 @@ void DrawMonster(ImDrawList *Draw) {
         
         if (iconhero) {
             ImVec2 iconPos(HeroPos.X, HeroPos.Y);
-        DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth);
+            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth);
         }
 
         if (drawMDistance) {
@@ -321,10 +282,10 @@ void DrawMonster(ImDrawList *Draw) {
             auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
             绘制字体描边(22.5,HeroPos.X - (textSize1.x / 2), HeroPos.Y,ImColor(248,248,255),s.c_str());
         }
-
     }
-    long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20; // 0x70 m_ShowPlayer
-    uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18); // 0x70 m_ShowPlayer
+
+    long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
+    uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
     
     for (int i = 0; i < stop_monster; i++) {
         auto Objaddr = getPtr641(monster + ((i << 3) / 1));
@@ -333,7 +294,7 @@ void DrawMonster(ImDrawList *Draw) {
             continue;
         }
 
-        auto is_team = Read<bool>(Objaddr + m_bSameCampType); // m_bSameCampType
+        auto is_team = Read<bool>(Objaddr + m_bSameCampType);
         if (is_team) {
             continue;
         }
@@ -341,20 +302,18 @@ void DrawMonster(ImDrawList *Draw) {
         auto mHeroID = Read<int>(Objaddr + 0x194);        
         auto type = Read<int>(Objaddr + m_iType);
         
-        auto death = Read<bool>(Objaddr + m_bDeath); // m_bDeath
+        auto death = Read<bool>(Objaddr + m_bDeath);
         if (death) {
             continue;
         }
 
-        int Health = Read<uint64_t>(Objaddr + m_Hp); // m_hP
-        if(Health <= 0)
-        {
+        int Health = Read<uint64_t>(Objaddr + m_Hp);
+        if(Health <= 0) {
             continue;
         }
         
-        int maxHealth = Read<uint64_t>(Objaddr + m_HpMax); // m_MaxHp
-        if(maxHealth <= 0)
-        {
+        int maxHealth = Read<uint64_t>(Objaddr + m_HpMax);
+        if(maxHealth <= 0) {
             continue;
         }     
         
@@ -387,7 +346,6 @@ void DrawMonster(ImDrawList *Draw) {
                std::string s = "TURTLE UNDER ATK!";
                std::string h;
                h += "Health: "+ std::to_string((int)Health);
-
                Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 30), ImColor(248,248,255), s.c_str());
                Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 50), ImColor(248,248,255), h.c_str());               
            }
@@ -402,12 +360,6 @@ void DrawMonster(ImDrawList *Draw) {
            
              std::string monsterName = MonsterToString(mHeroID);
              if (monsterName.empty()) continue;             
-             //auto bShowEntityLayer = Read<bool>(Objaddr + 0x32c);               
-             bool isImportantMonster = (mHeroID == 2002 || mHeroID == 2220 || mHeroID == 2003 || mHeroID == 2221 || 
-                                          mHeroID == 2004 || mHeroID == 2005 || mHeroID == 2222 || mHeroID == 2223);
-                
-             //bool shouldShow = !bShowEntityLayer || isImportantMonster;               
-             //if (!shouldShow) continue;            
            
              bool isEventMonster = (mHeroID >= 2220 && mHeroID <= 2232);
              ImColor nameColor = isEventMonster ? IM_COL32(255, 215, 0, 255) : IM_COL32(220, 180, 255, 255);     
@@ -445,9 +397,7 @@ struct MonsterData {
 };
 
 MonsterData monster[20];
-
 int MonsterCount = 0;
-
 uintptr_t Oneself;
 
 void MonsterRetribution() {
@@ -577,7 +527,6 @@ void RoomInfoList() {
 
         uint64_t lUid = Read<uint64_t>(obj + 0x20);
         uint32_t zoneId = Read<uint32_t>(obj + 0x60);
-        std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
 
         uint32_t heroid = Read<uint32_t>(obj + 0x4C);
         int spellId = Read<int>(obj + 0x64);
@@ -590,9 +539,9 @@ void RoomInfoList() {
         std::string rankStr = RankToString(rank, myth);
 
         if (camp == myTeamCamp && playerB < 5) {
-            PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
+            PlayerB[playerB++] = { name, "", hero, rankStr, spell, "" };
         } else if (playerR < 5) {
-            PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
+            PlayerR[playerR++] = { name, "", hero, rankStr, spell, "" };
         }
     }
 }
@@ -677,197 +626,150 @@ void DrawMinimapESP(ImDrawList* draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    // State untuk expand/collapse dan drag to resize
-    static bool isExpanded = true;
-    static ImVec2 expandedSize = ImVec2(800, 500);
-    static ImVec2 collapsedSize = ImVec2(250, 50);
+    static ImVec2 windowSize = ImVec2(600, 450);
     static bool isResizing = false;
     static ImVec2 resizeStartSize;
     static ImVec2 resizeStartPos;
     
-    // Set ukuran window berdasarkan state
-    if (isExpanded) {
-        ImGui::SetNextWindowSizeConstraints(ImVec2(400, 300), ImVec2(1200, FLT_MAX));
-        ImGui::SetNextWindowSize(expandedSize, ImGuiCond_FirstUseEver);
-    } else {
-        ImGui::SetNextWindowSize(collapsedSize, ImGuiCond_Always);
-    }
+    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 350), ImVec2(700, 600));
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
     ImGui::Begin(oxorany("ESP Controller"), nullptr, window_flags);
     
-    // Dapatkan window properties
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     ImVec2 windowPos = ImGui::GetWindowPos();
-    ImVec2 windowSize = ImGui::GetWindowSize();
-    ImVec2 bottomRight = ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y);
+    ImVec2 currentWindowSize = ImGui::GetWindowSize();
+    ImVec2 bottomRight = ImVec2(windowPos.x + currentWindowSize.x, windowPos.y + currentWindowSize.y);
     
-    // Resize handle (corner kanan bawah)
     float resizeHandleSize = 20.0f;
     ImVec2 resizeHandleMin = ImVec2(bottomRight.x - resizeHandleSize, bottomRight.y - resizeHandleSize);
     ImVec2 resizeHandleMax = bottomRight;
     
-    // Draw resize handle indicator
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     drawList->AddRectFilled(resizeHandleMin, resizeHandleMax, IM_COL32(100, 100, 100, 200));
     drawList->AddRect(resizeHandleMin, resizeHandleMax, IM_COL32(200, 200, 200, 255), 0, 0, 1.0f);
     
-    // Check for resize drag
     ImVec2 mousePos = ImGui::GetMousePos();
     if (ImGui::IsMouseHoveringRect(resizeHandleMin, resizeHandleMax)) {
         ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNWSE);
         if (ImGui::IsMouseDown(0)) {
             isResizing = true;
-            resizeStartSize = windowSize;
+            resizeStartSize = currentWindowSize;
             resizeStartPos = mousePos;
         }
     }
     
-    // Handle resize drag
     if (isResizing && ImGui::IsMouseDown(0)) {
         ImVec2 delta = ImVec2(mousePos.x - resizeStartPos.x, mousePos.y - resizeStartPos.y);
         ImVec2 newSize = ImVec2(
-            std::max(400.0f, resizeStartSize.x + delta.x),
-            std::max(300.0f, resizeStartSize.y + delta.y)
+            std::max(500.0f, resizeStartSize.x + delta.x),
+            std::max(350.0f, resizeStartSize.y + delta.y)
         );
-        
-        if (isExpanded) {
-            expandedSize = newSize;
-        } else {
-            collapsedSize = newSize;
-        }
+        newSize.x = std::min(700.0f, newSize.x);
+        newSize.y = std::min(600.0f, newSize.y);
+        windowSize = newSize;
     } else if (!ImGui::IsMouseDown(0)) {
         isResizing = false;
     }
-    
-    // Button Expand/Collapse di top-right
-    ImVec2 availableSpace = ImGui::GetContentRegionAvail();
-    float buttonWidth = 80.0f;
-    ImGui::SetCursorPosX(availableSpace.x - buttonWidth - 10.0f);
-    
-    if (ImGui::Button(isExpanded ? oxorany("Collapse") : oxorany("Expand"), ImVec2(buttonWidth, 0))) {
-        isExpanded = !isExpanded;
-        if (isExpanded) {
-            expandedSize = ImGui::GetWindowSize();
-        } else {
-            collapsedSize = ImGui::GetWindowSize();
-        }
-    }
 
-    // Garis pembatas
     ImGui::Separator();
 
-    if (isExpanded) {
-        // TAB BAR untuk ESP, Room Info, dan Settings
-        if (ImGui::BeginTabBar("####MainTabs")) {
+    if (ImGui::BeginTabBar("####MainTabs")) {
 
-            // ====== TAB ESP ======
-            if (ImGui::BeginTabItem(oxorany("ESP"))) {
-                ImGui::Spacing();
-                ImGui::Text(oxorany("ESP Options:"));
-                ImGui::Separator();
-                
-                ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
-                ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
-                ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
-                ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
-                
-                ImGui::Spacing();
-                ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
-                
-                ImGui::EndTabItem();
-            }
-
-            // ====== TAB ROOM INFO ======
-            if (ImGui::BeginTabItem(oxorany("Room Info"))) {
-                ImGui::Spacing();
-                
-                if (ImGui::CollapsingHeader(oxorany("Blue Team"), ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::Indent();
-                    if (PlayerB[0].Name.empty()) {
-                        ImGui::Text(oxorany("No data yet"));
-                    } else {
-                        for (int i = 0; i < 5; i++) {
-                            if (PlayerB[i].Name.empty()) break;
-                            
-                            ImGui::Separator();
-                            ImGui::Text(oxorany("Player %d"), i + 1);
-                            ImGui::Text(oxorany("Name: %s"), PlayerB[i].Name.c_str());
-                            ImGui::Text(oxorany("Hero: %s"), PlayerB[i].Hero.c_str());
-                            ImGui::Text(oxorany("Spell: %s"), PlayerB[i].Spell.c_str());
-                            ImGui::Text(oxorany("Rank: %s"), PlayerB[i].Rank.c_str());
-                        }
-                    }
-                    ImGui::Unindent();
-                }
-                
-                ImGui::Spacing();
-                
-                if (ImGui::CollapsingHeader(oxorany("Red Team"), ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::Indent();
-                    if (PlayerR[0].Name.empty()) {
-                        ImGui::Text(oxorany("No data yet"));
-                    } else {
-                        for (int i = 0; i < 5; i++) {
-                            if (PlayerR[i].Name.empty()) break;
-                            
-                            ImGui::Separator();
-                            ImGui::Text(oxorany("Player %d"), i + 1);
-                            ImGui::Text(oxorany("Name: %s"), PlayerR[i].Name.c_str());
-                            ImGui::Text(oxorany("Hero: %s"), PlayerR[i].Hero.c_str());
-                            ImGui::Text(oxorany("Spell: %s"), PlayerR[i].Spell.c_str());
-                            ImGui::Text(oxorany("Rank: %s"), PlayerR[i].Rank.c_str());
-                        }
-                    }
-                    ImGui::Unindent();
-                }
-                
-                ImGui::EndTabItem();
-            }
-
-            // ====== TAB SETTINGS ======
-            if (ImGui::BeginTabItem(oxorany("Settings"))) {
-                ImGui::Spacing();
-                ImGui::Text(oxorany("UI Settings:"));
-                ImGui::Separator();
-                
-                static int theme = 0;
-                const char* themes[] = { "Dark", "Light", "Classic" };
-                if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
-                    if (theme == 0) ImGui::StyleColorsDark();
-                    if (theme == 1) ImGui::StyleColorsLight();
-                    if (theme == 2) ImGui::StyleColorsClassic();
-                }
-                
-                static float opacity = 1.0f;
-                ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
-                ImGui::GetStyle().Alpha = opacity;
-                
-                ImGui::Spacing();
-                ImGui::Separator();
-                ImGui::Text(oxorany("Actions:"));
-                
-                if (ImGui::Button(oxorany("Exit Cheat"), ImVec2(-1, 30))) {
-                    main_thread_flag = false;
-                }
-                
-                if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 30))) {
-                    exit(0);
-                }
-                
-                ImGui::EndTabItem();
-            }
-
-            ImGui::EndTabBar();
+        if (ImGui::BeginTabItem(oxorany("ESP"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("ESP Options:"));
+            ImGui::Separator();
+            
+            ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
+            ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
+            ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
+            ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
+            
+            ImGui::Spacing();
+            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
+            
+            ImGui::EndTabItem();
         }
-    } else {
-        // Mode collapsed - hanya tampilkan toggle minimal
-        ImGui::Text(oxorany("ESP: %s"), drawMDistance ? "ON" : "OFF");
-        if (ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0)) {
-            isExpanded = !isExpanded;
+
+        if (ImGui::BeginTabItem(oxorany("Room Info"))) {
+            ImGui::Spacing();
+            
+            if (ImGui::CollapsingHeader(oxorany("Blue Team"), ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Indent();
+                if (PlayerB[0].Name.empty()) {
+                    ImGui::Text(oxorany("No data yet"));
+                } else {
+                    for (int i = 0; i < 5; i++) {
+                        if (PlayerB[i].Name.empty()) break;
+                        
+                        ImGui::Separator();
+                        ImGui::Text(oxorany("Player %d"), i + 1);
+                        ImGui::Text(oxorany("Name: %s"), PlayerB[i].Name.c_str());
+                        ImGui::Text(oxorany("Hero: %s"), PlayerB[i].Hero.c_str());
+                        ImGui::Text(oxorany("Spell: %s"), PlayerB[i].Spell.c_str());
+                        ImGui::Text(oxorany("Rank: %s"), PlayerB[i].Rank.c_str());
+                    }
+                }
+                ImGui::Unindent();
+            }
+            
+            ImGui::Spacing();
+            
+            if (ImGui::CollapsingHeader(oxorany("Red Team"), ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Indent();
+                if (PlayerR[0].Name.empty()) {
+                    ImGui::Text(oxorany("No data yet"));
+                } else {
+                    for (int i = 0; i < 5; i++) {
+                        if (PlayerR[i].Name.empty()) break;
+                        
+                        ImGui::Separator();
+                        ImGui::Text(oxorany("Player %d"), i + 1);
+                        ImGui::Text(oxorany("Name: %s"), PlayerR[i].Name.c_str());
+                        ImGui::Text(oxorany("Hero: %s"), PlayerR[i].Hero.c_str());
+                        ImGui::Text(oxorany("Spell: %s"), PlayerR[i].Spell.c_str());
+                        ImGui::Text(oxorany("Rank: %s"), PlayerR[i].Rank.c_str());
+                    }
+                }
+                ImGui::Unindent();
+            }
+            
+            ImGui::EndTabItem();
         }
+
+        if (ImGui::BeginTabItem(oxorany("Settings"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("UI Settings:"));
+            ImGui::Separator();
+            
+            static int theme = 0;
+            const char* themes[] = { "Dark", "Light", "Classic" };
+            if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
+                if (theme == 0) ImGui::StyleColorsDark();
+                if (theme == 1) ImGui::StyleColorsLight();
+                if (theme == 2) ImGui::StyleColorsClassic();
+            }
+            
+            static float opacity = 1.0f;
+            ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+            ImGui::GetStyle().Alpha = opacity;
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Actions:"));
+            ImGui::Spacing();
+            
+            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+                exit(0);
+            }
+            
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
 
-    // Draw overlay (minimap dan monster) tetap jalan
     if (MinimapIcon) DrawMinimapESP(ImGui::GetForegroundDrawList());
     DrawMonster(ImGui::GetForegroundDrawList());
     
