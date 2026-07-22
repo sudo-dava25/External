@@ -193,7 +193,7 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x664d190);
+    uintptr_t BattleManager = getPtr641(libbase + 0x75dc470);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
@@ -421,8 +421,8 @@ void DrawMonster(ImDrawList *Draw) {
         }
         
         if (iconhero) {
-            ImVec2 iconPos(HeroPos.X + 20.0f, HeroPos.Y);
-            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 39.0f);
+            ImVec2 iconPos(HeroPos.X + 15.0f, HeroPos.Y + 20.0f);
+            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 25.0f);
         }
 
         if (drawDistance || drawHealth || drawHeroName) {
@@ -445,7 +445,7 @@ void DrawMonster(ImDrawList *Draw) {
 
             if (!s.empty()) {
                 auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
-                绘制字体描边(22.5, HeroPos.X - (textSize1.x / 2) + 38.0f, HeroPos.Y, ImColor(248,248,255), s.c_str());
+                绘制字体描边(22.5, HeroPos.X - (textSize1.x / 2) + 35.0f, HeroPos.Y, ImColor(248,248,255), s.c_str());
             }
         }
     }
