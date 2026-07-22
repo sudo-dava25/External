@@ -418,8 +418,8 @@ void DrawMonster(ImDrawList *Draw) {
         }
         
         if (iconhero) {
-            ImVec2 iconPos(HeroPos.X, HeroPos.Y);
-            DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 0.5f);
+        ImVec2 iconPos(HeroPos.X, HeroPos.Y + 35.0f);
+        DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 1.7f);
         }
 
         if (drawMDistance) {
