@@ -103,7 +103,7 @@ struct String {
 
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x663fa60);
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
