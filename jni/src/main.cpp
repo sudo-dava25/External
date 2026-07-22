@@ -363,7 +363,7 @@ void DrawMonster(ImDrawList *Draw) {
         
         bool isOutScreen;
         float IconSize = abs_ScreenX / 80.0f;
-        Vector2 HeroPos = {en_posSc.X, en_posSc.Y + 30.0f};
+        Vector2 HeroPos = {en_posSc.X, en_posSc.Y - 20.0f};
         Vector2 Res;
         
         if (HeroPos.X < 0 || HeroPos.X > abs_ScreenX || HeroPos.Y < 0 ||
