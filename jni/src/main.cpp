@@ -62,8 +62,8 @@ bool drawMDistance = true;
 bool drawMName = true;
 bool drawAlertUnderAttack = true;
 bool iconhero = true;
-bool drawCooldown = true;
-float RadiusCir = 50.0f;
+bool drawESPBox = false;
+bool drawHealthBar = true;
 long libbase = 0;
 
 std::string fshy(uintptr_t address)
@@ -161,23 +161,10 @@ void Touch_Tap(int x, int y) {
      Touch_Up();
 }
 
-bool lastRetriTriggered[20] = {false};
-bool autoRetribution = false;
-bool AutoRetributionRed = false;
-bool AutoRetributionBlue = false;
-bool AutoRetributionLord = false;
-bool AutoRetributionTurtle = false;
-bool AutoRetributionCrab = false;
-bool AutoRetributionLito = false;        
-
-float retriTouchX = 1575;
-float retriTouchY = 661;
+int MonsterCount = 0;
+uintptr_t Oneself;
 
 void DrawMonster(ImDrawList *Draw) {
-    if (autoRetribution) {
-        ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(255, 255, 255, 180), 16);
-        ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(0, 0, 0, 255), 16, 2.5f);
-    }
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
@@ -268,6 +255,41 @@ void DrawMonster(ImDrawList *Draw) {
             ImGui::GetForegroundDrawList()->AddLine({loc_posSc.X,loc_posSc.Y}, {en_posSc.X, en_posSc.Y}, ImColor(255, 255, 255), lineSize);
         }
         
+        // ===== ESP BOX 2D =====
+        if (drawESPBox) {
+            float boxWidth = 50.0f;
+            float boxHeight = 80.0f;
+            
+            ImVec2 boxMin = ImVec2(en_posSc.X - boxWidth / 2, en_posSc.Y - boxHeight / 2);
+            ImVec2 boxMax = ImVec2(en_posSc.X + boxWidth / 2, en_posSc.Y + boxHeight / 2);
+            
+            ImColor boxColor = is_team ? ImColor(0, 255, 0) : ImColor(255, 0, 0);
+            ImGui::GetForegroundDrawList()->AddRect(boxMin, boxMax, boxColor, 0, 0, 2.0f);
+        }
+        
+        // ===== HEALTH BAR =====
+        if (drawHealthBar) {
+            float barWidth = 40.0f;
+            float barHeight = 5.0f;
+            float healthPercent = (float)Health / (float)maxHealth;
+            
+            ImVec2 barMin = ImVec2(en_posSc.X - barWidth / 2, en_posSc.Y - 45.0f);
+            ImVec2 barMax = ImVec2(en_posSc.X + barWidth / 2, en_posSc.Y - 45.0f + barHeight);
+            ImGui::GetForegroundDrawList()->AddRectFilled(barMin, barMax, ImColor(0, 0, 0));
+            
+            ImVec2 healthBarMax = ImVec2(barMin.x + (barWidth * healthPercent), barMax.y);
+            ImColor healthColor;
+            if (healthPercent > 0.5f) {
+                healthColor = ImColor(0, 255, 0);
+            } else if (healthPercent > 0.25f) {
+                healthColor = ImColor(255, 255, 0);
+            } else {
+                healthColor = ImColor(255, 0, 0);
+            }
+            ImGui::GetForegroundDrawList()->AddRectFilled(barMin, healthBarMax, healthColor);
+            ImGui::GetForegroundDrawList()->AddRect(barMin, barMax, ImColor(255, 255, 255), 0, 0, 1.0f);
+        }
+        
         if (iconhero) {
             ImVec2 iconPos(HeroPos.X, HeroPos.Y);
             DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth);
@@ -283,35 +305,6 @@ void DrawMonster(ImDrawList *Draw) {
             auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
             绘制字体描边(22.5,HeroPos.X - (textSize1.x / 2), HeroPos.Y,ImColor(248,248,255),s.c_str());
         }
-        
-        // ===== COOLDOWN DISPLAY =====
-        if (drawCooldown) {
-            uintptr_t cooldownComp = ReadPtr(Objaddr + 0xa8);
-            if (cooldownComp) {
-                float cooldown = Read<float>(cooldownComp);
-                
-                if (cooldown > 0.0f) {
-                    std::string cooldownStr;
-                    if (cooldown >= 1.0f) {
-                        cooldownStr = std::to_string((int)cooldown) + "s";
-                    } else {
-                        cooldownStr = std::to_string((int)(cooldown * 100)) + "ms";
-                    }
-                    
-                    ImColor cooldownColor;
-                    if (cooldown <= 1.0f) {
-                        cooldownColor = ImColor(0, 255, 0);
-                    } else if (cooldown <= 3.0f) {
-                        cooldownColor = ImColor(255, 255, 0);
-                    } else {
-                        cooldownColor = ImColor(255, 100, 100);
-                    }
-                    
-                    绘制字体描边(20.0f, HeroPos.X - 25.0f, HeroPos.Y + 35.0f, cooldownColor, cooldownStr.c_str());
-                }
-            }
-        }
-        // ===== END COOLDOWN DISPLAY =====
     }
 
     long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
@@ -430,100 +423,11 @@ MonsterData monster[20];
 int MonsterCount = 0;
 uintptr_t Oneself;
 
-void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
-    BattleManager = getPtr641(BattleManager + 0xB8);
-    BattleManager = getPtr641(BattleManager);
-
-    if(!BattleManager) return;
-    Oneself = getPtr641(BattleManager + 0x50);
-    if(!Oneself) return;
-
-    Vector3 MyPosition;
-    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
-    
-    MonsterCount = 0;
-    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
-    if (Showmonster != 0) {
-        int monsterCount = Read<int>(Showmonster + 0x18);
-        uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
-        if (monsterCount >= 0 && monsterCount <= 100 && monsterDataPtr != 0) {
-            uintptr_t monsterDataArray = monsterDataPtr + 0x20;
-            int monsterfound = 0;
-            for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
-                uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
-                if (currentMonsterPtr == 0) continue;
-                int monsterID = Read<int>(currentMonsterPtr + 0x194);
-                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
-                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
-                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
-                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
-                bool mDead = (deadFlag != 0);
-                std::string mName = MonsterToString(monsterID);
-                if (mName.empty()) {
-                    if (monsterID == 2002) mName = "Lord";
-                    else if (monsterID == 2003) mName = "Turtle";
-                    else continue;
-                }
-                monster[monsterfound].address   = currentMonsterPtr;
-                monster[monsterfound].position  = monsterPos;
-                monster[monsterfound].distance  = Vector3::Distance(MyPosition, monsterPos);
-                monster[monsterfound].health    = monsterHP;
-                monster[monsterfound].maxHP     = monsterMaxHP;
-                monster[monsterfound].isDead    = mDead;
-                monster[monsterfound].isVisible = true;
-                monster[monsterfound].isValid   = true;
-                strncpy(monster[monsterfound].name, mName.c_str(), sizeof(monster[monsterfound].name) - 1);
-                monster[monsterfound].name[sizeof(monster[monsterfound].name) - 1] = '\0';
-                monsterfound++;
-            }
-            MonsterCount = monsterfound;
-        }
-    }
-}
-
 int CalculateRetriDamage(int Level, int KillWild) {
     if (KillWild < 5) {
         return 600 + (Level - 1) * 80;
     } else {
         return (600 + (Level - 1) * 80) + (300 + (Level - 1) * 40);
-    }
-}
-
-void CheckAndTriggerRetribution() {
-    if (!autoRetribution && !Oneself && MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0xA60);
-    int killWild = Read<int>(Oneself + 0x198);
-    int retriDmg = CalculateRetriDamage(myLevel, killWild);
-    for (int i = 0; i < MonsterCount; i++) {
-        if (!monster[i].isValid || monster[i].isDead) {
-            lastRetriTriggered[i] = false;
-            continue;
-        }
-        if (monster[i].distance > 5.0f) {
-            lastRetriTriggered[i] = false;
-            continue;
-        }
-        int id = Read<int>(monster[i].address + 0x194);
-        bool isTarget = false;
-        if (AutoRetributionLord && (id == 2002)) isTarget = true;
-        if (AutoRetributionTurtle && (id == 2003)) isTarget = true;
-        if (AutoRetributionBlue && (id == 2005)) isTarget = true;
-        if (AutoRetributionLito && (id == 2056)) isTarget = true;
-        if (AutoRetributionCrab && (id == 2005)) isTarget = true;
-        if (AutoRetributionRed && (id == 2004)) isTarget = true;        
-        if (!isTarget) {
-            lastRetriTriggered[i] = false;
-            continue;
-        }
-        if (monster[i].health <= retriDmg) {
-            if (!lastRetriTriggered[i]) {
-                Touch_Tap(retriTouchX, retriTouchY);
-                lastRetriTriggered[i] = true;
-            }
-        } else {
-            lastRetriTriggered[i] = false;
-        }
     }
 }
 
@@ -576,82 +480,7 @@ void RoomInfoList() {
     }
 }
 
-int MinimapSize = 342;
-int MinimapPos = 76;
-bool MinimapIcon = true;
-bool HideLine = false;
 
-float g_MinimapScale = 74.11f;
-float g_Res0_MultX = 1.0f;
-float g_Res0_MultY = 1.0f;
-float g_Res1_OffsetX = 0.0f;
-float g_Res1_OffsetY = 0.0f;
-int g_ICSize = 38;
-
-Vector2 WorldToMinimap(Vector3 HeroPosition) {
-    float angle = 314.60f * 0.017453292519943295f;
-    float angleCos = std::cos(angle);
-    float angleSin = std::sin(angle);
-
-    Vector2 Res0;
-    Res0.X = ((angleCos * HeroPosition.X - angleSin * (-HeroPosition.Z)) / g_MinimapScale) * g_Res0_MultX;
-    Res0.Y = ((angleSin * HeroPosition.Y + angleCos * (-HeroPosition.Z)) / g_MinimapScale) * g_Res0_MultY;
-
-    Vector2 Res1;
-    Res1.X = (Res0.X * MinimapSize) + MinimapPos + MinimapSize / 2.0f + g_Res1_OffsetX;
-    Res1.Y = (Res0.Y * MinimapSize) + MinimapSize / 2.0f + g_Res1_OffsetY;
-
-    return Res1;
-}
-
-void DrawMinimapESP(ImDrawList* draw) {
-    if (!MinimapIcon) return;
-
-    long a1 = getPtr641(libbase + 0x7641e18);
-    if (!a1) return;
-
-    long a2 = getPtr641(a1 + 0xB8);
-    if (!a2) return;
-
-    long a32 = getPtr641(a2);
-    if (!a32) return;
-
-    size_t m_ShowPlayers     = 0x78;
-    size_t m_bSameCampType   = 0x2b1;
-    size_t m_bDeath          = 0xcd;
-    size_t m_vCachePosition  = 0x294;
-
-    long showList = getPtr641(a32 + m_ShowPlayers);
-    if (!showList) return;
-
-    long playerList = getPtr641(showList + 0x10);
-    if (!playerList) return;
-    playerList += 0x20;
-
-    uint playerCount = Read<uint>(showList + 0x18);
-    for (int i = 0; i < playerCount; i++) {
-        long Objaddr = getPtr641(playerList + (i << 3));
-        if (!Objaddr) continue;
-
-        if (Read<bool>(Objaddr + m_bSameCampType)) continue;
-        if (Read<bool>(Objaddr + m_bDeath)) continue;
-
-        Vector3A pos{};
-        vm_readv(Objaddr + m_vCachePosition, &pos, sizeof(pos));
-        if (pos.X == 0 && pos.Y == 0 && pos.Z == 0) continue;
-
-        Vector2 minimapPos = WorldToMinimap({ pos.X, pos.Y, pos.Z });
-        draw->AddCircleFilled(ImVec2(minimapPos.X, minimapPos.Y), g_ICSize / 2.0f, IM_COL32(255, 0, 0, 255));
-    }
-
-    if (!HideLine) {
-        draw->AddRect(
-            ImVec2(MinimapPos, 0),
-            ImVec2(MinimapPos + MinimapSize, MinimapSize),
-            IM_COL32(255, 255, 255, 255)
-        );
-    }
-}
 
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
@@ -714,8 +543,13 @@ void Layout_tick_UI() {
             ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
             ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
             ImGui::Checkbox(oxorany("Distance & Hero Name"), &drawMDistance);
-            ImGui::Checkbox(oxorany("Show Cooldown"), &drawCooldown);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Additional ESP:"));
+            ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
+            ImGui::Checkbox(oxorany("Health Bar"), &drawHealthBar);
             
             ImGui::Spacing();
             ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
@@ -801,7 +635,6 @@ void Layout_tick_UI() {
         ImGui::EndTabBar();
     }
 
-    if (MinimapIcon) DrawMinimapESP(ImGui::GetForegroundDrawList());
     DrawMonster(ImGui::GetForegroundDrawList());
     
     g_window = ImGui::GetCurrentWindow();
@@ -824,8 +657,6 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
     while (main_thread_flag) {
-        MonsterRetribution();
-        CheckAndTriggerRetribution();
         RoomInfoList();
         drawBegin();
         Layout_tick_UI();
