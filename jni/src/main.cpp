@@ -619,22 +619,13 @@ void Layout_tick_UI() {
             ImGui::Text(oxorany("ESP Options:"));
             ImGui::Separator();
             
-            ImGui::Checkbox(oxorany("Line"), &drawMHealth);
-            ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Info Display:"));
-            ImGui::Checkbox(oxorany("Show Distance"), &drawDistance);
-            ImGui::Checkbox(oxorany("Show Health"), &drawHealth);
-            ImGui::Checkbox(oxorany("Show Hero Name"), &drawHeroName);
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Additional ESP:"));
             ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
-            ImGui::Checkbox(oxorany("Health Bar"), &drawHealthBar);
-            
+            ImGui::Checkbox(oxorany("ESP Health Bar"), &drawHealthBar);
+            ImGui::Checkbox(oxorany("ESP Line"), &drawMHealth);
+            ImGui::Checkbox(oxorany("ESP Hero Icon"), &iconhero);
+            ImGui::Checkbox(oxorany("ESP Distance"), &drawDistance);
+            ImGui::Checkbox(oxorany("ESP Health"), &drawHealth);
+            ImGui::Checkbox(oxorany("ESP Hero Name"), &drawHeroName);
             ImGui::Spacing();
             ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
             
@@ -669,8 +660,8 @@ void Layout_tick_UI() {
             ImGui::Separator();
             
             ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
-            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Position X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Position Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
 
             ImGui::Spacing();
             ImGui::Separator();
@@ -685,6 +676,7 @@ void Layout_tick_UI() {
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+            ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
             
             ImGui::Spacing();
             ImGui::Text(oxorany("UI Settings:"));
@@ -711,7 +703,7 @@ void Layout_tick_UI() {
                 exit(0);
             }
             
-            ImGui::PopStyleVar();
+            ImGui::PopStyleVar(2);
             ImGui::EndTabItem();
         }
 
