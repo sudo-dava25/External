@@ -564,13 +564,13 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    static ImVec2 windowSize = ImVec2(700, 600);
+    static ImVec2 windowSize = ImVec2(715, 600);
     static bool isResizing = false;
     static ImVec2 resizeStartSize;
     static ImVec2 resizeStartPos;
     
-    ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(700, 600));
-    ImGui::SetNextWindowSize(ImVec2(700, 600), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(715, 600));
+    ImGui::SetNextWindowSize(ImVec2(715, 600), ImGuiCond_FirstUseEver);
 
     ImGui::Begin(oxorany("VOLKS External / @volksive"), nullptr, window_flags);
     
@@ -668,20 +668,11 @@ void Layout_tick_UI() {
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
-    
-    ImGui::BeginChild("SettingsChild", 
-                      ImVec2(0, 0), 
-                      false, 
-                      ImGuiWindowFlags_NoScrollbar | 
-                      ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Spacing();
     ImGui::Text(oxorany("UI Settings:"));
     ImGui::Separator();
     
-    static int theme = 0;
+    static int theme = 2;
     const char* themes[] = { "Dark", "Light", "Classic" };
     if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
         if (theme == 0) ImGui::StyleColorsDark();
@@ -698,12 +689,10 @@ void Layout_tick_UI() {
     ImGui::Text(oxorany("Actions:"));
     ImGui::Spacing();
     
-    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 50))) {
         exit(0);
     }
     
-    ImGui::EndChild();
-    ImGui::PopStyleVar(3);
     ImGui::EndTabItem();
 }
 
