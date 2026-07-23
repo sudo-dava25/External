@@ -570,7 +570,7 @@ void Layout_tick_UI() {
     static ImVec2 resizeStartPos;
     
     ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(700, 600));
-    ImGui::SetNextWindowSize(700, 600), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(700, 600), ImGuiCond_FirstUseEver);
 
     ImGui::Begin(oxorany("VOLKS External / @volksive"), nullptr, window_flags);
     
