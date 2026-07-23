@@ -77,8 +77,8 @@ long libbase = 0;
 
 bool lastRetriTriggered[20] = {false};
 bool autoRetribution = false;
-bool AutoRetributionBuff = false;  // Red & Blue Buff
-bool AutoRetributionBoss = false;  // Lord & Turtle
+bool AutoRetributionBuff = false;
+bool AutoRetributionBoss = false;
 bool AutoRetributionRed = false;
 bool AutoRetributionBlue = false;
 bool AutoRetributionLord = false;
@@ -99,8 +99,6 @@ std::string fshy(uintptr_t address)
     return utf16_to_utf8(buffer, stringLength);
 }
 
-
-
 struct String {
     char pad_0000[0x10];
     int length;
@@ -115,7 +113,7 @@ struct String {
 };
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470); // typeinfo (GetMainCamera)
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
@@ -189,19 +187,19 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18); // libbase
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
     if(!BattleManager) return;
-    Oneself = getPtr641(BattleManager + 0x50); // m_LocalPlayerShow
+    Oneself = getPtr641(BattleManager + 0x50);
     if(!Oneself) return;
 
     Vector3 MyPosition;
-    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition)); // 0x294 (m_vCachePosition)
+    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
     
     MonsterCount = 0;
-    uintptr_t Showmonster = getPtr641(BattleManager + 0x80); // 0x80 (m_ShowMonsters)
+    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
     if (Showmonster != 0) {
         int monsterCount = Read<int>(Showmonster + 0x18);
         uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
@@ -211,11 +209,11 @@ void MonsterRetribution() {
             for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
                 uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
                 if (currentMonsterPtr == 0) continue;
-                int monsterID = Read<int>(currentMonsterPtr + 0x194); // m_ID (ShowEntity)
-                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac); // m_Hp (ShowEntity)
-                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0); // m_HpMax (ShowEntity)
-                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294); // m_vCachePosition (ShowEntity)
-                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd); // m_bDeath (ShowEntity)
+                int monsterID = Read<int>(currentMonsterPtr + 0x194);
+                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
+                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
+                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
+                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
                 bool mDead = (deadFlag != 0);
                 std::string mName = MonsterToString(monsterID);
                 if (mName.empty()) {
@@ -246,8 +244,8 @@ int CalculateRetriDamage(int Level, int KillWild) {
 
 void CheckAndTriggerRetribution() {
     if (!autoRetribution || !Oneself || MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0x198); // _KillWildTimes (LogicPlayer)
-    int killWild = Read<int>(Oneself + 0xA38); // m_Level (ShowEntity)
+    int myLevel = Read<int>(Oneself + 0x198);
+    int killWild = Read<int>(Oneself + 0xA38);
     int retriDmg = CalculateRetriDamage(myLevel, killWild);
     for (int i = 0; i < MonsterCount; i++) {
         if (!monster[i].isValid || monster[i].isDead) {
@@ -258,10 +256,10 @@ void CheckAndTriggerRetribution() {
             lastRetriTriggered[i] = false;
             continue;
         }
-        int id = Read<int>(monster[i].address + 0x194); // m_ID (ShowEntity}
+        int id = Read<int>(monster[i].address + 0x194);
         bool isTarget = false;
-        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;  // Lord & Turtle
-        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;  // Red & Blue Buff
+        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;
+        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;
         if (!isTarget) {
             lastRetriTriggered[i] = false;
             continue;
@@ -286,21 +284,21 @@ void DrawMonster(ImDrawList *Draw) {
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x7641e18); // libbase
+    long a1 = getPtr641(libbase + 0x7641e18);
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
-    size_t m_LocalPlayerShow = 0x50; // BattleManager
-    size_t m_ShowPlayers = 0x78; // BattleManager
-    size_t m_ShowMonsters = 0x80; // BattleManager
+    size_t m_LocalPlayerShow = 0x50;
+    size_t m_ShowPlayers = 0x78;
+    size_t m_ShowMonsters = 0x80;
     
-    size_t m_iType = 0x80; // ShowEntity
-    size_t m_Hp = 0x1ac; // ShowEntity
-    size_t m_HpMax = 0x1b0; // ShowEntity
-    size_t m_bDeath = 0xcd; // ShowEntity
-    size_t m_bSameCampType = 0x2b1; // ShowEntity
-    size_t m_vCachePosition = 0x294; // ShowEntity
-    size_t m_HeroName = 0x8d8; // ShowPlayer
+    size_t m_iType = 0x80;
+    size_t m_Hp = 0x1ac;
+    size_t m_HpMax = 0x1b0;
+    size_t m_bDeath = 0xcd;
+    size_t m_bSameCampType = 0x2b1;
+    size_t m_vCachePosition = 0x294;
+    size_t m_HeroName = 0x8d8;
     
     long selfp = getPtr641(a32 + m_LocalPlayerShow);
     
@@ -323,7 +321,7 @@ void DrawMonster(ImDrawList *Draw) {
         if (is_team) {
             continue;
         }
-        auto HeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
+        auto HeroID = Read<int>(Objaddr + 0x194);
 
         auto death = Read<bool>(Objaddr + m_bDeath);
         if (death) {
@@ -459,7 +457,7 @@ void DrawMonster(ImDrawList *Draw) {
                 continue;
             }
 
-            auto mHeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
+            auto mHeroID = Read<int>(Objaddr + 0x194);
             auto type = Read<int>(Objaddr + m_iType);
             
             auto death = Read<bool>(Objaddr + m_bDeath);
@@ -612,97 +610,97 @@ void Layout_tick_UI() {
 
     ImGui::Separator();
 
-    if (ImGui::BeginTabBar("####MainTabs", ImGuiTabBarFlags_None)) {
+    if (ImGui::BeginTabBar("####MainTabs")) {
 
-    if (ImGui::BeginTabItem(oxorany("ESP"))) {
-        ImGui::Spacing();
-        ImGui::Text(oxorany("ESP Options:"));
-        ImGui::Separator();
-        
-        ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
-        ImGui::Checkbox(oxorany("ESP Health Bar"), &drawHealthBar);
-        ImGui::Checkbox(oxorany("ESP Line"), &drawMHealth);
-        ImGui::Checkbox(oxorany("ESP Hero Icon"), &iconhero);
-        ImGui::Checkbox(oxorany("ESP Distance"), &drawDistance);
-        ImGui::Checkbox(oxorany("ESP Health"), &drawHealth);
-        ImGui::Checkbox(oxorany("ESP Hero Name"), &drawHeroName);
-        ImGui::Spacing();
-        ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
-        
-        ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
-        ImGui::Spacing();
-        ImGui::Text(oxorany("Monster ESP Options:"));
-        ImGui::Separator();
-        
-        ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
-        
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text(oxorany("Display Settings:"));
-        ImGui::Checkbox(oxorany("Show Monster Name"), &drawMonsterName);
-        ImGui::Checkbox(oxorany("Show Monster Distance"), &drawMonsterDistance);
-        ImGui::Checkbox(oxorany("Show Monster Health"), &drawMonsterHealth);
-        
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text(oxorany("Alerts:"));
-        ImGui::Checkbox(oxorany("Alert When Lord/Turtle Under Attack"), &drawMonsterAlert);
-        
-        ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem(oxorany("Retribution"))) {
-        ImGui::Spacing();
-        ImGui::Text(oxorany("Auto Retribution:"));
-        ImGui::Separator();
-        
-        ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
-        ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-        ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text(oxorany("Target Selection:"));
-        ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
-        ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
-        
-        ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem(oxorany("Settings"))) {
-        ImGui::Spacing();
-        ImGui::Text(oxorany("UI Settings:"));
-        ImGui::Separator();
-        
-        static int theme = 0;
-        const char* themes[] = { "Dark", "Light", "Classic" };
-        if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
-            if (theme == 0) ImGui::StyleColorsDark();
-            if (theme == 1) ImGui::StyleColorsLight();
-            if (theme == 2) ImGui::StyleColorsClassic();
+        if (ImGui::BeginTabItem(oxorany("ESP"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("ESP Options:"));
+            ImGui::Separator();
+            
+            ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
+            ImGui::Checkbox(oxorany("ESP Health Bar"), &drawHealthBar);
+            ImGui::Checkbox(oxorany("ESP Line"), &drawMHealth);
+            ImGui::Checkbox(oxorany("ESP Hero Icon"), &iconhero);
+            ImGui::Checkbox(oxorany("ESP Distance"), &drawDistance);
+            ImGui::Checkbox(oxorany("ESP Health"), &drawHealth);
+            ImGui::Checkbox(oxorany("ESP Hero Name"), &drawHeroName);
+            ImGui::Spacing();
+            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
+            
+            ImGui::EndTabItem();
         }
-        
-        static float opacity = 1.0f;
-        ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
-        ImGui::GetStyle().Alpha = opacity;
-        
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text(oxorany("Actions:"));
-        ImGui::Spacing();
-        
-        if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
-            exit(0);
-        }
-        
-        ImGui::EndTabItem();
-    }
 
-    ImGui::EndTabBar();
-}
+        if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("Monster ESP Options:"));
+            ImGui::Separator();
+            
+            ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Display Settings:"));
+            ImGui::Checkbox(oxorany("Show Monster Name"), &drawMonsterName);
+            ImGui::Checkbox(oxorany("Show Monster Distance"), &drawMonsterDistance);
+            ImGui::Checkbox(oxorany("Show Monster Health"), &drawMonsterHealth);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Alerts:"));
+            ImGui::Checkbox(oxorany("Alert When Lord/Turtle Under Attack"), &drawMonsterAlert);
+            
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem(oxorany("Retribution"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("Auto Retribution:"));
+            ImGui::Separator();
+            
+            ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
+            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Target Selection:"));
+            ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
+            ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
+            
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem(oxorany("Settings"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("UI Settings:"));
+            ImGui::Separator();
+            
+            static int theme = 0;
+            const char* themes[] = { "Dark", "Light", "Classic" };
+            if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
+                if (theme == 0) ImGui::StyleColorsDark();
+                if (theme == 1) ImGui::StyleColorsLight();
+                if (theme == 2) ImGui::StyleColorsClassic();
+            }
+            
+            static float opacity = 1.0f;
+            ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+            ImGui::GetStyle().Alpha = opacity;
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Actions:"));
+            ImGui::Spacing();
+            
+            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+                exit(0);
+            }
+            
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
 
     DrawMonster(ImGui::GetForegroundDrawList());
     
