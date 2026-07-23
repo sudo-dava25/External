@@ -612,97 +612,97 @@ void Layout_tick_UI() {
 
     ImGui::Separator();
 
-    if (ImGui::BeginTabBar("####MainTabs")) {
+    if (ImGui::BeginTabBar("####MainTabs", ImGuiTabBarFlags_None)) {
 
-        if (ImGui::BeginTabItem(oxorany("ESP"))) {
-            ImGui::Spacing();
-            ImGui::Text(oxorany("ESP Options:"));
-            ImGui::Separator();
-            
-            ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
-            ImGui::Checkbox(oxorany("ESP Health Bar"), &drawHealthBar);
-            ImGui::Checkbox(oxorany("ESP Line"), &drawMHealth);
-            ImGui::Checkbox(oxorany("ESP Hero Icon"), &iconhero);
-            ImGui::Checkbox(oxorany("ESP Distance"), &drawDistance);
-            ImGui::Checkbox(oxorany("ESP Health"), &drawHealth);
-            ImGui::Checkbox(oxorany("ESP Hero Name"), &drawHeroName);
-            ImGui::Spacing();
-            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
-            
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
-            ImGui::Spacing();
-            ImGui::Text(oxorany("Monster ESP Options:"));
-            ImGui::Separator();
-            
-            ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Display Settings:"));
-            ImGui::Checkbox(oxorany("Show Monster Name"), &drawMonsterName);
-            ImGui::Checkbox(oxorany("Show Monster Distance"), &drawMonsterDistance);
-            ImGui::Checkbox(oxorany("Show Monster Health"), &drawMonsterHealth);
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Alerts:"));
-            ImGui::Checkbox(oxorany("Alert When Lord/Turtle Under Attack"), &drawMonsterAlert);
-            
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem(oxorany("Retribution"))) {
-            ImGui::Spacing();
-            ImGui::Text(oxorany("Auto Retribution:"));
-            ImGui::Separator();
-            
-            ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
-            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
-
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Target Selection:"));
-            ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
-            ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
-            
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem(oxorany("Settings"))) {
-    ImGui::Spacing();
-    ImGui::Text(oxorany("UI Settings:"));
-    ImGui::Separator();
-    
-    static int theme = 0;
-    const char* themes[] = { "Dark", "Light", "Classic" };
-    if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
-        if (theme == 0) ImGui::StyleColorsDark();
-        if (theme == 1) ImGui::StyleColorsLight();
-        if (theme == 2) ImGui::StyleColorsClassic();
+    if (ImGui::BeginTabItem(oxorany("ESP"))) {
+        ImGui::Spacing();
+        ImGui::Text(oxorany("ESP Options:"));
+        ImGui::Separator();
+        
+        ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
+        ImGui::Checkbox(oxorany("ESP Health Bar"), &drawHealthBar);
+        ImGui::Checkbox(oxorany("ESP Line"), &drawMHealth);
+        ImGui::Checkbox(oxorany("ESP Hero Icon"), &iconhero);
+        ImGui::Checkbox(oxorany("ESP Distance"), &drawDistance);
+        ImGui::Checkbox(oxorany("ESP Health"), &drawHealth);
+        ImGui::Checkbox(oxorany("ESP Hero Name"), &drawHeroName);
+        ImGui::Spacing();
+        ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
+        
+        ImGui::EndTabItem();
     }
-    
-    static float opacity = 1.0f;
-    ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
-    ImGui::GetStyle().Alpha = opacity;
-    
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Text(oxorany("Actions:"));
-    ImGui::Spacing();
-    
-    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
-        exit(0);
+
+    if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
+        ImGui::Spacing();
+        ImGui::Text(oxorany("Monster ESP Options:"));
+        ImGui::Separator();
+        
+        ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text(oxorany("Display Settings:"));
+        ImGui::Checkbox(oxorany("Show Monster Name"), &drawMonsterName);
+        ImGui::Checkbox(oxorany("Show Monster Distance"), &drawMonsterDistance);
+        ImGui::Checkbox(oxorany("Show Monster Health"), &drawMonsterHealth);
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text(oxorany("Alerts:"));
+        ImGui::Checkbox(oxorany("Alert When Lord/Turtle Under Attack"), &drawMonsterAlert);
+        
+        ImGui::EndTabItem();
     }
-    
-    ImGui::EndTabItem();
+
+    if (ImGui::BeginTabItem(oxorany("Retribution"))) {
+        ImGui::Spacing();
+        ImGui::Text(oxorany("Auto Retribution:"));
+        ImGui::Separator();
+        
+        ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
+        ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+        ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text(oxorany("Target Selection:"));
+        ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
+        ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
+        
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem(oxorany("Settings"))) {
+        ImGui::Spacing();
+        ImGui::Text(oxorany("UI Settings:"));
+        ImGui::Separator();
+        
+        static int theme = 0;
+        const char* themes[] = { "Dark", "Light", "Classic" };
+        if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
+            if (theme == 0) ImGui::StyleColorsDark();
+            if (theme == 1) ImGui::StyleColorsLight();
+            if (theme == 2) ImGui::StyleColorsClassic();
+        }
+        
+        static float opacity = 1.0f;
+        ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+        ImGui::GetStyle().Alpha = opacity;
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text(oxorany("Actions:"));
+        ImGui::Spacing();
+        
+        if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+            exit(0);
+        }
+        
+        ImGui::EndTabItem();
+    }
+
+    ImGui::EndTabBar();
 }
-
-        ImGui::EndTabBar();
-    }
 
     DrawMonster(ImGui::GetForegroundDrawList());
     
