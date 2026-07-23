@@ -564,13 +564,13 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    static ImVec2 windowSize = ImVec2(715, 600);
+    static ImVec2 windowSize = ImVec2(715, 400);
     static bool isResizing = false;
     static ImVec2 resizeStartSize;
     static ImVec2 resizeStartPos;
     
-    ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(715, 600));
-    ImGui::SetNextWindowSize(ImVec2(715, 600), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(715, 400));
+    ImGui::SetNextWindowSize(ImVec2(715, 400), ImGuiCond_FirstUseEver);
 
     ImGui::Begin(oxorany("VOLKS External / @volksive"), nullptr, window_flags);
     
@@ -720,7 +720,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 30.0f;
+    ImGui::GetStyle().ScrollbarSize = 25.0f;
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
