@@ -119,7 +119,7 @@ struct String {
 };
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc47);
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
@@ -556,52 +556,67 @@ void DrawMonster(ImDrawList *Draw) {
 }
 
 void RoomInfoList() {
-    uintptr_t LogicBattleManager = getPtr641(libbase + 0x7641e18);
-    if (!LogicBattleManager) return;
+    try {
+        uintptr_t LogicBattleManager = getPtr641(libbase + 0x7641e18);
+        if (!LogicBattleManager) return;
 
-    long playersList = getPtr641(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x10); // m_ShowPlayers
-    int playerCount = Read<int>(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x18);
-    if (playerCount <= 0 || !playersList) return;
+        uintptr_t showPlayersPtr = getPtr641((uintptr_t)LogicBattleManager + 0x78);
+        if (!showPlayersPtr) return;
 
-    long a1 = getPtr641(libbase + 0x7641e18); // BattleManager base
-    long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
-    long a32 = getPtr641((a2 << 1) >> 1);
+        long playersList = getPtr641(showPlayersPtr + 0x10); // m_ShowPlayers
+        int playerCount = Read<int>(showPlayersPtr + 0x18);
+        if (playerCount <= 0 || playerCount > 10 || !playersList) return;
 
-    long selfp = getPtr641(a32 + 0x50); // m_LocalPlayerShow
+        long a1 = getPtr641(libbase + 0x7641e18); // BattleManager base
+        if (!a1) return;
+        
+        long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
+        if (!a2) return;
+        
+        long a32 = getPtr641((a2 << 1) >> 1);
+        if (!a32) return;
 
-    if (!selfp) return;
+        long selfp = getPtr641(a32 + 0x50); // m_LocalPlayerShow
+        if (!selfp) return;
 
-    uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30); // offset iCamp dari dump.cs
+        uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30); // offset iCamp dari dump.cs
 
-    int playerB = 0;
-    int playerR = 0;
+        int playerB = 0;
+        int playerR = 0;
 
-    for (int i = 0; i < playerCount; i++) {
-        long obj = getPtr641(playersList + i * 8);
-        if (!obj) continue;
+        for (int i = 0; i < playerCount && i < 10; i++) {
+            long obj = getPtr641(playersList + i * 8);
+            if (!obj) continue;
 
-        auto nameObj = *(String**)(obj + 0x40);
-        std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
+            try {
+                auto nameObj = *(String**)(obj + 0x40);
+                std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
 
-        uint64_t lUid = Read<uint64_t>(obj + 0x20);
-        uint32_t zoneId = Read<uint32_t>(obj + 0x60);
-        std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
+                uint64_t lUid = Read<uint64_t>(obj + 0x20);
+                uint32_t zoneId = Read<uint32_t>(obj + 0x60);
+                std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
 
-        uint32_t heroid = Read<uint32_t>(obj + 0x4C);
-        int spellId = Read<int>(obj + 0x64);
-        uint32_t rank = Read<uint32_t>(obj + 0x128);
-        uint32_t myth = Read<uint32_t>(obj + 0x1D8);
-        uint32_t camp = Read<uint32_t>(obj + 0x30);
+                uint32_t heroid = Read<uint32_t>(obj + 0x4C);
+                int spellId = Read<int>(obj + 0x64);
+                uint32_t rank = Read<uint32_t>(obj + 0x128);
+                uint32_t myth = Read<uint32_t>(obj + 0x1CC);
+                uint32_t camp = Read<uint32_t>(obj + 0x30);
 
-        std::string hero = HeroToString(heroid);
-        std::string spell = SpellToString(spellId);
-        std::string rankStr = RankToString(rank, myth);
+                std::string hero = HeroToString(heroid);
+                std::string spell = SpellToString(spellId);
+                std::string rankStr = RankToString(rank, myth);
 
-        if (camp == myTeamCamp && playerB < 5) {
-            PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
-        } else if (playerR < 5) {
-            PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
+                if (camp == myTeamCamp && playerB < 5) {
+                    PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
+                } else if (playerR < 5) {
+                    PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
+                }
+            } catch (...) {
+                continue;
+            }
         }
+    } catch (...) {
+        return;
     }
 }
 
