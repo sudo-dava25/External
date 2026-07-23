@@ -562,9 +562,9 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    // JANGAN tambahkan NoScrollbar - biarkan scrollbar aktif
-    // TAPI kita akan sembunyikan visualnya
-    // window_flags |= ImGuiWindowFlags_NoScrollWithMouse; // Opsional: biarkan scroll dengan mouse
+    // ===== PERUBAHAN: AKTIFKAN SCROLLBAR =====
+    // Hapus ImGuiWindowFlags_NoScrollbar agar scrollbar muncul
+    // Tetap bisa resize
     
     static ImVec2 windowSize = ImVec2(600, 450);
     static bool isResizing = false;
@@ -576,17 +576,16 @@ void Layout_tick_UI() {
 
     ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
     
-    // ========== SEMBUNYIKAN SCROLLBAR INDICATOR ==========
+    // ===== PERUBAHAN: AKTIFKAN SCROLLBAR DI SINI =====
+    // Jangan set ScrollbarY = false, biarkan ImGui mengelolanya
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window) {
-        // Scrollbar tetap berfungsi secara logika, tapi kita sembunyikan visualnya
-        window->ScrollbarY = false;  // Sembunyikan scrollbar Y
-        window->ScrollbarX = false;  // Sembunyikan scrollbar X
-        // TAPI jangan set ScrollbarSizes ke 0, biarkan area scroll tetap ada
-        // window->ScrollbarSizes = ImVec2(0, 0); // JANGAN ini
+        // Hanya disable scrollbar X (horizontal), Y tetap aktif
+        window->ScrollbarX = false;
+        // Biarkan window->ScrollbarY tetap otomatis
     }
     
-    // ========== RESIZE HANDLE (Tanpa indicator visual) ==========
+    // ========== RESIZE HANDLE MANUAL (tanpa segitiga indicator) ==========
     ImVec2 windowPos = ImGui::GetWindowPos();
     ImVec2 currentWindowSize = ImGui::GetWindowSize();
     ImVec2 bottomRight = ImVec2(windowPos.x + currentWindowSize.x, windowPos.y + currentWindowSize.y);
@@ -595,7 +594,8 @@ void Layout_tick_UI() {
     ImVec2 resizeHandleMin = ImVec2(bottomRight.x - resizeHandleSize, bottomRight.y - resizeHandleSize);
     ImVec2 resizeHandleMax = bottomRight;
     
-    // JANGAN GAMBAR apapun - biar ga ada indicator
+    // JANGAN GAMBAR apapun di sini - biar ga ada indicator visual
+    // TAPI tetap deteksi area untuk resize
     
     ImVec2 mousePos = ImGui::GetMousePos();
     if (ImGui::IsMouseHoveringRect(resizeHandleMin, resizeHandleMax)) {
@@ -616,6 +616,7 @@ void Layout_tick_UI() {
         newSize.x = std::min(700.0f, newSize.x);
         newSize.y = std::min(600.0f, newSize.y);
         windowSize = newSize;
+        // Force resize window
         ImGui::SetWindowSize(windowSize);
     } else if (!ImGui::IsMouseDown(0)) {
         isResizing = false;
@@ -739,18 +740,14 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     
-    // Setup gaya UI
+    // Setup gaya UI - AKTIFKAN scrollbar kembali
     ImGui::GetStyle().WindowRounding = 25.0f;
+    ImGui::GetStyle().ScrollbarSize = 15.0f;      // Aktifkan scrollbar dengan ukuran standar
+    ImGui::GetStyle().ScrollbarRounding = 12.0f;  // Berikan rounded effect pada scrollbar
+    ImGui::GetStyle().GrabRounding = 5.0f;        // Rounded effect pada grab handle
     
-    // SCROLLBAR: Aktif secara fungsional tapi invisible
-    ImGui::GetStyle().ScrollbarSize = 6.0f;  // Ukuran kecil agar tidak mengganggu
-    ImGui::GetStyle().ScrollbarRounding = 0.0f;
-    ImGui::GetStyle().Colors[ImGuiCol_ScrollbarBg] = ImVec4(0, 0, 0, 0);  // Transparan
-    ImGui::GetStyle().Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0, 0, 0, 0);  // Transparan
-    ImGui::GetStyle().Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0, 0, 0, 0);  // Transparan
-    ImGui::GetStyle().Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0, 0, 0, 0);  // Transparan
-    
-    ImGui::GetStyle().GrabRounding = 0.0f;
+    // Hilangkan segitiga resize bawaan ImGui
+    ImGui::GetStyle().WindowBorderSize = 1.0f;
     
     while (main_thread_flag) {
         MonsterRetribution();
