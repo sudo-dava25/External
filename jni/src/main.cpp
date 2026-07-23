@@ -421,7 +421,7 @@ void DrawMonster(ImDrawList *Draw) {
         }
         
         if (iconhero) {
-            ImVec2 iconPos(HeroPos.X + 15.0f, HeroPos.Y + 22.5f);
+            ImVec2 iconPos(HeroPos.X + 20.0f, HeroPos.Y + 22.5f);
             DrawHeroIcon(ImGui::GetBackgroundDrawList(), iconPos, HeroID, Health, maxHealth, 25.0f);
         }
 
@@ -445,7 +445,7 @@ void DrawMonster(ImDrawList *Draw) {
 
             if (!s.empty()) {
                 auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
-                绘制字体描边(23.5, HeroPos.X - (textSize1.x / 2) + 37.5f, HeroPos.Y + 25.0f, ImColor(248,248,255), s.c_str());
+                绘制字体描边(23.5, HeroPos.X - (textSize1.x / 2) + 37.5f, HeroPos.Y + 32.5f, ImColor(248,248,255), s.c_str());
             }
         }
     }
