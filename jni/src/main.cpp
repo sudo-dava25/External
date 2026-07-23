@@ -67,6 +67,14 @@ bool drawHealthBar = true;
 bool drawDistance = true;
 bool drawHealth = true;
 bool drawHeroName = true;
+
+// ESP Monster Controls
+bool enableESPMonster = false;
+bool drawMonsterName = true;
+bool drawMonsterDistance = true;
+bool drawMonsterHealth = true;
+bool drawMonsterAlert = true;
+
 long libbase = 0;
 
 bool lastRetriTriggered[20] = {false};
@@ -93,17 +101,7 @@ std::string fshy(uintptr_t address)
     return utf16_to_utf8(buffer, stringLength);
 }
 
-struct RoomPlayerInfo {
-    std::string Name;
-    std::string UserID;
-    std::string Squad;
-    std::string Rank;
-    std::string Hero;
-    std::string Spell;
-};
 
-RoomPlayerInfo PlayerB[5];
-RoomPlayerInfo PlayerR[5];
 
 struct String {
     char pad_0000[0x10];
@@ -119,7 +117,7 @@ struct String {
 };
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x75dc47);
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
@@ -193,7 +191,7 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
+    uintptr_t BattleManager = getPtr641(libbase + 0x664d190);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
@@ -455,168 +453,121 @@ void DrawMonster(ImDrawList *Draw) {
         }
     }
 
-    long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
-    uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
-    
-    for (int i = 0; i < stop_monster; i++) {
-        auto Objaddr = getPtr641(monster + ((i << 3) / 1));
-
-        if ((Objaddr ^ 0x0) == 0x0) {
-            continue;
-        }
-
-        auto is_team = Read<bool>(Objaddr + m_bSameCampType);
-        if (is_team) {
-            continue;
-        }
-
-        auto mHeroID = Read<int>(Objaddr + 0x194);        
-        auto type = Read<int>(Objaddr + m_iType);
+    if (enableESPMonster) {
+        long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
+        uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
         
-        auto death = Read<bool>(Objaddr + m_bDeath);
-        if (death) {
-            continue;
-        }
+        for (int i = 0; i < stop_monster; i++) {
+            auto Objaddr = getPtr641(monster + ((i << 3) / 1));
 
-        int Health = Read<uint64_t>(Objaddr + m_Hp);
-        if(Health <= 0) {
-            continue;
-        }
-        
-        int maxHealth = Read<uint64_t>(Objaddr + m_HpMax);
-        if(maxHealth <= 0) {
-            continue;
-        }     
-        
-        Vector3 ZL;
-        vm_readv(selfp + m_vCachePosition, &ZL, sizeof(ZL));
-      
-        Vector3 Dm;
-        vm_readv(Objaddr + m_vCachePosition, &Dm, sizeof(Dm));
-        
-        Vector2 mon_posSc;
-        WorldToScreen(Dm, &mon_posSc);
-        
-        Vector2 l_posSc;
-        WorldToScreen(ZL, &l_posSc);
-        
-        Vector2 MonPos = {mon_posSc.X, mon_posSc.Y};
-        if (MonPos.X < 0 || MonPos.X > abs_ScreenX || MonPos.Y < 0 || MonPos.Y > abs_ScreenY) {
-            continue;
-        }     
-        if (type == 5) {           
-           if (mHeroID == 2002 && Health < maxHealth) {
-               std::string s = "LORD UNDER ATK!";
-               std::string h;
-               h += "Health: "+ std::to_string((int)Health);
-               Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 30), ImColor(248,248,255), s.c_str());
-               Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 50), ImColor(248,248,255), h.c_str());               
-           }
-        
-           if (mHeroID == 2003 && Health < maxHealth) {
-               std::string s = "TURTLE UNDER ATK!";
-               std::string h;
-               h += "Health: "+ std::to_string((int)Health);
-               Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 30), ImColor(248,248,255), s.c_str());
-               Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 50), ImColor(248,248,255), h.c_str());               
-           }
-        }
-        if (type == 1) {
-            std::string sL = "MINION";
-            auto textSize1 = ImGui::CalcTextSize(sL.c_str(), 0, 29); 
-            绘制字体描边(22.5,MonPos.X - (textSize1.x / 2), MonPos.Y,ImColor(248,248,255),sL.c_str());
-        }
-        if (type == 2) {
-            if (!bMonster(mHeroID)) continue;               
-           
-             std::string monsterName = MonsterToString(mHeroID);
-             if (monsterName.empty()) continue;             
-           
-             bool isEventMonster = (mHeroID >= 2220 && mHeroID <= 2232);
-             ImColor nameColor = isEventMonster ? IM_COL32(255, 215, 0, 255) : IM_COL32(220, 180, 255, 255);     
-           
-             auto DistanceM = Vector3::Distance(ZL, Dm);         
-         
-             std::string strName = monsterName;
-             if (isEventMonster) {
-                 strName = "[EVENT] " + monsterName;
-             } 
-             
-             auto textSize1 = ImGui::CalcTextSize(strName.c_str(), 0, 29); 
-             绘制字体描边(22.5,MonPos.X - (textSize1.x / 2), MonPos.Y + 20,nameColor,strName.c_str());
-             
-             std::string sm;     
-             sm += std::to_string((int)DistanceM);
-             sm += "m | ";
-             sm += "Health: "+ std::to_string((int)Health);      
-             auto textSize11 = ImGui::CalcTextSize(sm.c_str(), 0, 29);    
-             绘制字体描边(22.5,MonPos.X - (textSize11.x / 2), MonPos.Y,nameColor,sm.c_str());
-        }
-    }
-}
-
-void RoomInfoList() {
-    try {
-        uintptr_t LogicBattleManager = getPtr641(libbase + 0x7641e18);
-        if (!LogicBattleManager) return;
-
-        uintptr_t showPlayersPtr = getPtr641((uintptr_t)LogicBattleManager + 0x78);
-        if (!showPlayersPtr) return;
-
-        long playersList = getPtr641(showPlayersPtr + 0x10); // m_ShowPlayers
-        int playerCount = Read<int>(showPlayersPtr + 0x18);
-        if (playerCount <= 0 || playerCount > 10 || !playersList) return;
-
-        long a1 = getPtr641(libbase + 0x7641e18); // BattleManager base
-        if (!a1) return;
-        
-        long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
-        if (!a2) return;
-        
-        long a32 = getPtr641((a2 << 1) >> 1);
-        if (!a32) return;
-
-        long selfp = getPtr641(a32 + 0x50); // m_LocalPlayerShow
-        if (!selfp) return;
-
-        uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30); // offset iCamp dari dump.cs
-
-        int playerB = 0;
-        int playerR = 0;
-
-        for (int i = 0; i < playerCount && i < 10; i++) {
-            long obj = getPtr641(playersList + i * 8);
-            if (!obj) continue;
-
-            try {
-                auto nameObj = *(String**)(obj + 0x40);
-                std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
-
-                uint64_t lUid = Read<uint64_t>(obj + 0x20);
-                uint32_t zoneId = Read<uint32_t>(obj + 0x60);
-                std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
-
-                uint32_t heroid = Read<uint32_t>(obj + 0x4C);
-                int spellId = Read<int>(obj + 0x64);
-                uint32_t rank = Read<uint32_t>(obj + 0x128);
-                uint32_t myth = Read<uint32_t>(obj + 0x1CC);
-                uint32_t camp = Read<uint32_t>(obj + 0x30);
-
-                std::string hero = HeroToString(heroid);
-                std::string spell = SpellToString(spellId);
-                std::string rankStr = RankToString(rank, myth);
-
-                if (camp == myTeamCamp && playerB < 5) {
-                    PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
-                } else if (playerR < 5) {
-                    PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
-                }
-            } catch (...) {
+            if ((Objaddr ^ 0x0) == 0x0) {
                 continue;
             }
+
+            auto is_team = Read<bool>(Objaddr + m_bSameCampType);
+            if (is_team) {
+                continue;
+            }
+
+            auto mHeroID = Read<int>(Objaddr + 0x194);        
+            auto type = Read<int>(Objaddr + m_iType);
+            
+            auto death = Read<bool>(Objaddr + m_bDeath);
+            if (death) {
+                continue;
+            }
+
+            int Health = Read<uint64_t>(Objaddr + m_Hp);
+            if(Health <= 0) {
+                continue;
+            }
+            
+            int maxHealth = Read<uint64_t>(Objaddr + m_HpMax);
+            if(maxHealth <= 0) {
+                continue;
+            }     
+            
+            Vector3 ZL;
+            vm_readv(selfp + m_vCachePosition, &ZL, sizeof(ZL));
+          
+            Vector3 Dm;
+            vm_readv(Objaddr + m_vCachePosition, &Dm, sizeof(Dm));
+            
+            Vector2 mon_posSc;
+            WorldToScreen(Dm, &mon_posSc);
+            
+            Vector2 l_posSc;
+            WorldToScreen(ZL, &l_posSc);
+            
+            Vector2 MonPos = {mon_posSc.X, mon_posSc.Y};
+            if (MonPos.X < 0 || MonPos.X > abs_ScreenX || MonPos.Y < 0 || MonPos.Y > abs_ScreenY) {
+                continue;
+            }     
+            if (type == 5) {           
+               if (drawMonsterAlert) {
+                   if (mHeroID == 2002 && Health < maxHealth) {
+                       std::string s = "LORD UNDER ATK!";
+                       std::string h;
+                       h += "Health: "+ std::to_string((int)Health);
+                       Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 30), ImColor(248,248,255), s.c_str());
+                       Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 50), ImColor(248,248,255), h.c_str());               
+                   }
+                
+                   if (mHeroID == 2003 && Health < maxHealth) {
+                       std::string s = "TURTLE UNDER ATK!";
+                       std::string h;
+                       h += "Health: "+ std::to_string((int)Health);
+                       Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 30), ImColor(248,248,255), s.c_str());
+                       Draw->AddText(nullptr,22.5f, ImVec2(abs_ScreenX / 2 - 70.f, 50), ImColor(248,248,255), h.c_str());               
+                   }
+               }
+            }
+            if (type == 1) {
+                std::string sL = "MINION";
+                auto textSize1 = ImGui::CalcTextSize(sL.c_str(), 0, 29); 
+                绘制字体描边(22.5,MonPos.X - (textSize1.x / 2), MonPos.Y,ImColor(248,248,255),sL.c_str());
+            }
+            if (type == 2) {
+                if (!bMonster(mHeroID)) continue;               
+               
+                 std::string monsterName = MonsterToString(mHeroID);
+                 if (monsterName.empty()) continue;             
+               
+                 bool isEventMonster = (mHeroID >= 2220 && mHeroID <= 2232);
+                 ImColor nameColor = isEventMonster ? IM_COL32(255, 215, 0, 255) : IM_COL32(220, 180, 255, 255);     
+               
+                 auto DistanceM = Vector3::Distance(ZL, Dm);         
+             
+                 if (drawMonsterName) {
+                     std::string strName = monsterName;
+                     if (isEventMonster) {
+                         strName = "[EVENT] " + monsterName;
+                     } 
+                     
+                     auto textSize1 = ImGui::CalcTextSize(strName.c_str(), 0, 29); 
+                     绘制字体描边(22.5,MonPos.X - (textSize1.x / 2), MonPos.Y + 20,nameColor,strName.c_str());
+                 }
+                 
+                 if (drawMonsterDistance || drawMonsterHealth) {
+                     std::string sm;
+                     
+                     if (drawMonsterDistance) {
+                         sm += std::to_string((int)DistanceM);
+                         sm += "m";
+                     }
+                     
+                     if (drawMonsterHealth) {
+                         if (!sm.empty()) sm += " | ";
+                         sm += "Health: "+ std::to_string((int)Health);
+                     }
+                     
+                     if (!sm.empty()) {
+                         auto textSize11 = ImGui::CalcTextSize(sm.c_str(), 0, 29);    
+                         绘制字体描边(22.5,MonPos.X - (textSize11.x / 2), MonPos.Y,nameColor,sm.c_str());
+                     }
+                 }
+            }
         }
-    } catch (...) {
-        return;
     }
 }
 
@@ -631,7 +582,7 @@ void Layout_tick_UI() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(500, 350), ImVec2(700, 600));
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
-    ImGui::Begin(oxorany("VOLKS External"), nullptr, window_flags);
+    ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
     
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     ImVec2 windowPos = ImGui::GetWindowPos();
@@ -678,7 +629,7 @@ void Layout_tick_UI() {
             ImGui::Text(oxorany("ESP Options:"));
             ImGui::Separator();
             
-            ImGui::Checkbox(oxorany("Line to Enemy"), &drawMHealth);
+            ImGui::Checkbox(oxorany("Line"), &drawMHealth);
             ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
             ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
             
@@ -697,6 +648,28 @@ void Layout_tick_UI() {
             
             ImGui::Spacing();
             ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
+            
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
+            ImGui::Spacing();
+            ImGui::Text(oxorany("Monster ESP Options:"));
+            ImGui::Separator();
+            
+            ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Display Settings:"));
+            ImGui::Checkbox(oxorany("Show Monster Name"), &drawMonsterName);
+            ImGui::Checkbox(oxorany("Show Monster Distance"), &drawMonsterDistance);
+            ImGui::Checkbox(oxorany("Show Monster Health"), &drawMonsterHealth);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Alerts:"));
+            ImGui::Checkbox(oxorany("Alert When Lord/Turtle Under Attack"), &drawMonsterAlert);
             
             ImGui::EndTabItem();
         }
@@ -723,51 +696,7 @@ void Layout_tick_UI() {
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem(oxorany("Room Info"))) {
-            ImGui::Spacing();
-            
-            if (ImGui::CollapsingHeader(oxorany("Blue Team"), ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Indent();
-                if (PlayerB[0].Name.empty()) {
-                    ImGui::Text(oxorany("No data yet"));
-                } else {
-                    for (int i = 0; i < 5; i++) {
-                        if (PlayerB[i].Name.empty()) break;
-                        
-                        ImGui::Separator();
-                        ImGui::Text(oxorany("Player %d"), i + 1);
-                        ImGui::Text(oxorany("Name: %s"), PlayerB[i].Name.c_str());
-                        ImGui::Text(oxorany("Hero: %s"), PlayerB[i].Hero.c_str());
-                        ImGui::Text(oxorany("Spell: %s"), PlayerB[i].Spell.c_str());
-                        ImGui::Text(oxorany("Rank: %s"), PlayerB[i].Rank.c_str());
-                    }
-                }
-                ImGui::Unindent();
-            }
-            
-            ImGui::Spacing();
-            
-            if (ImGui::CollapsingHeader(oxorany("Red Team"), ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Indent();
-                if (PlayerR[0].Name.empty()) {
-                    ImGui::Text(oxorany("No data yet"));
-                } else {
-                    for (int i = 0; i < 5; i++) {
-                        if (PlayerR[i].Name.empty()) break;
-                        
-                        ImGui::Separator();
-                        ImGui::Text(oxorany("Player %d"), i + 1);
-                        ImGui::Text(oxorany("Name: %s"), PlayerR[i].Name.c_str());
-                        ImGui::Text(oxorany("Hero: %s"), PlayerR[i].Hero.c_str());
-                        ImGui::Text(oxorany("Spell: %s"), PlayerR[i].Spell.c_str());
-                        ImGui::Text(oxorany("Rank: %s"), PlayerR[i].Rank.c_str());
-                    }
-                }
-                ImGui::Unindent();
-            }
-            
-            ImGui::EndTabItem();
-        }
+
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
             ImGui::Spacing();
@@ -825,7 +754,6 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
-        RoomInfoList();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
