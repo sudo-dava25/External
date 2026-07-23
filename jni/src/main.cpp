@@ -191,7 +191,7 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x664d190);
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
@@ -243,11 +243,7 @@ void MonsterRetribution() {
 }
 
 int CalculateRetriDamage(int Level, int KillWild) {
-    if (KillWild < 5) {
-        return 600 + (Level - 1) * 90;
-    } else {
-        return (600 + (Level - 1) * 90) + (400 + (Level - 1) * 45);
-    }
+    return 750 + (Level * 150);
 }
 
 void CheckAndTriggerRetribution() {
