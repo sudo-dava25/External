@@ -564,15 +564,15 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    static ImVec2 windowSize = ImVec2(600, 500);
+    static ImVec2 windowSize = ImVec2(700, 600);
     static bool isResizing = false;
     static ImVec2 resizeStartSize;
     static ImVec2 resizeStartPos;
     
-    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 350), ImVec2(700, 600));
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(700, 600));
+    ImGui::SetNextWindowSize(700, 600), ImGuiCond_FirstUseEver);
 
-    ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
+    ImGui::Begin(oxorany("VOLKS External / @volksive"), nullptr, window_flags);
     
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     ImVec2 windowPos = ImGui::GetWindowPos();
@@ -616,9 +616,8 @@ void Layout_tick_UI() {
 
         if (ImGui::BeginTabItem(oxorany("ESP"))) {
             ImGui::Spacing();
-            ImGui::Text(oxorany("ESP Options:"));
+            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
             ImGui::Separator();
-            
             ImGui::Checkbox(oxorany("ESP Box"), &drawESPBox);
             ImGui::Checkbox(oxorany("ESP Health Bar"), &drawHealthBar);
             ImGui::Checkbox(oxorany("ESP Line"), &drawMHealth);
@@ -626,17 +625,13 @@ void Layout_tick_UI() {
             ImGui::Checkbox(oxorany("ESP Distance"), &drawDistance);
             ImGui::Checkbox(oxorany("ESP Health"), &drawHealth);
             ImGui::Checkbox(oxorany("ESP Hero Name"), &drawHeroName);
-            ImGui::Spacing();
-            ImGui::Text(oxorany("Current FPS: %.1f"), ImGui::GetIO().Framerate);
+            
             
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
             ImGui::Spacing();
-            ImGui::Text(oxorany("Monster ESP Options:"));
-            ImGui::Separator();
-            
             ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
             
             ImGui::Spacing();
@@ -673,38 +668,44 @@ void Layout_tick_UI() {
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-            ImGui::BeginChild("SettingsChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
-            
-            ImGui::Spacing();
-            ImGui::Text(oxorany("UI Settings:"));
-            ImGui::Separator();
-            
-            static int theme = 0;
-            const char* themes[] = { "Dark", "Light", "Classic" };
-            if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
-                if (theme == 0) ImGui::StyleColorsDark();
-                if (theme == 1) ImGui::StyleColorsLight();
-                if (theme == 2) ImGui::StyleColorsClassic();
-            }
-            
-            static float opacity = 1.0f;
-            ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
-            ImGui::GetStyle().Alpha = opacity;
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Actions:"));
-            ImGui::Spacing();
-            
-            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
-                exit(0);
-            }
-            
-            ImGui::EndChild();
-            ImGui::PopStyleVar();
-            ImGui::EndTabItem();
-        }
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
+    
+    ImGui::BeginChild("SettingsChild", 
+                      ImVec2(0, 0), 
+                      false, 
+                      ImGuiWindowFlags_NoScrollbar | 
+                      ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Spacing();
+    ImGui::Text(oxorany("UI Settings:"));
+    ImGui::Separator();
+    
+    static int theme = 0;
+    const char* themes[] = { "Dark", "Light", "Classic" };
+    if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
+        if (theme == 0) ImGui::StyleColorsDark();
+        if (theme == 1) ImGui::StyleColorsLight();
+        if (theme == 2) ImGui::StyleColorsClassic();
+    }
+    
+    static float opacity = 1.0f;
+    ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+    ImGui::GetStyle().Alpha = opacity;
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text(oxorany("Actions:"));
+    ImGui::Spacing();
+    
+    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+        exit(0);
+    }
+    
+    ImGui::EndChild();
+    ImGui::PopStyleVar(3);
+    ImGui::EndTabItem();
+}
 
         ImGui::EndTabBar();
     }
