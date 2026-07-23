@@ -562,11 +562,13 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize;
     
-    // Ukuran default
-    static ImVec2 windowSize = ImVec2(600, 400);
+    static ImVec2 windowSize = ImVec2(550, 350);
     static int currentTab = -1;
+    static int lastTab = -1;
     
+    // FORCE SET WINDOW SIZE SETIAP FRAME
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+    ImGui::SetNextWindowSizeConstraints(windowSize, windowSize);
 
     ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
     
@@ -578,8 +580,9 @@ void Layout_tick_UI() {
     if (ImGui::BeginTabItem(oxorany("ESP"))) {
         if (currentTab != 0) {
             currentTab = 0;
-            windowSize = ImVec2(550, 350);
-            ImGui::SetWindowSize(windowSize);
+            windowSize = ImVec2(550, 450);
+            // LANGSUNG SET UKURAN
+            ImGui::SetWindowSize(windowSize, ImGuiCond_Always);
         }
         
         ImGui::Spacing();
@@ -603,8 +606,8 @@ void Layout_tick_UI() {
     if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
         if (currentTab != 1) {
             currentTab = 1;
-            windowSize = ImVec2(600, 420);
-            ImGui::SetWindowSize(windowSize);
+            windowSize = ImVec2(600, 450);
+            ImGui::SetWindowSize(windowSize, ImGuiCond_Always);
         }
         
         ImGui::Spacing();
@@ -632,8 +635,8 @@ void Layout_tick_UI() {
     if (ImGui::BeginTabItem(oxorany("Retribution"))) {
         if (currentTab != 2) {
             currentTab = 2;
-            windowSize = ImVec2(650, 480);
-            ImGui::SetWindowSize(windowSize);
+            windowSize = ImVec2(650, 430);
+            ImGui::SetWindowSize(windowSize, ImGuiCond_Always);
         }
         
         ImGui::Spacing();
@@ -657,8 +660,8 @@ void Layout_tick_UI() {
     if (ImGui::BeginTabItem(oxorany("Settings"))) {
         if (currentTab != 3) {
             currentTab = 3;
-            windowSize = ImVec2(580, 400);
-            ImGui::SetWindowSize(windowSize);
+            windowSize = ImVec2(580, 370);
+            ImGui::SetWindowSize(windowSize, ImGuiCond_Always);
         }
         
         ImGui::Spacing();
