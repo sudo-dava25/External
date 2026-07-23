@@ -785,4 +785,60 @@ void Layout_tick_UI() {
     if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
         if (theme == 0) ImGui::StyleColorsDark();
         if (theme == 1) ImGui::StyleColorsLight();
-        if (theme == 2
+        if (theme == 2) ImGui::StyleColorsClassic();
+    }
+    
+    static float opacity = 1.0f;
+    ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+    ImGui::GetStyle().Alpha = opacity;
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text(oxorany("Actions:"));
+    ImGui::Spacing();
+    
+    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 50))) {
+        exit(0);
+    }
+    
+    ImGui::EndTabItem();
+}
+
+        ImGui::EndTabBar();
+    }
+
+    DrawMonster(ImGui::GetForegroundDrawList());
+    
+    g_window = ImGui::GetCurrentWindow();
+    ImGui::End();
+}
+
+__attribute__((visibility("default"))) int main(int argc, char *argv[]) {
+    pid = pidof(oxorany("com.mobile.legends:UnityKillsMe"));
+    g_pid = pid;
+    libbase = GetBase(oxorany("libcsharp.so"));
+    printf("Lib: %p \n", libbase);
+    screen_config();
+    ::abs_ScreenX = (displayInfo.height > displayInfo.width ? displayInfo.height : displayInfo.width);
+    ::abs_ScreenY = (displayInfo.height < displayInfo.width ? displayInfo.height : displayInfo.width);
+    ::native_window_screen_x = (displayInfo.height > displayInfo.width ? displayInfo.height : displayInfo.width);
+    ::native_window_screen_y = (displayInfo.height > displayInfo.width ? displayInfo.height : displayInfo.width);
+    if (!initGUI_draw(native_window_screen_x, native_window_screen_y, true)) {
+        return -1;
+    }
+    Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
+    ImGui::GetStyle().WindowRounding = 25.0f;
+    ImGui::GetStyle().ScrollbarSize = 25.0f;
+    ImGui::StyleColorsClassic();
+    while (main_thread_flag) {
+        MonsterRetribution();
+        CheckAndTriggerRetribution();
+        drawBegin();
+        Layout_tick_UI();
+        drawEnd();
+        usleep(250);
+    }
+    shutdown();
+    Touch_Close();
+    return 0;
+}
