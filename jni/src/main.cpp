@@ -67,7 +67,6 @@ bool drawDistance = true;
 bool drawHealth = true;
 bool drawHeroName = true;
 
-// ESP Monster Controls
 bool enableESPMonster = false;
 bool drawMonsterName = true;
 bool drawMonsterDistance = true;
@@ -114,7 +113,7 @@ struct String {
 };
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470); // typeinfo (GetMainCamera)
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
@@ -167,7 +166,7 @@ bool bMonster(int iValue) {
 
 void Touch_Tap(int x, int y) {
      Touch_Down((float)x, (float)y);
-     usleep(30000);  // Reduced from 80ms to 30ms for faster response
+     usleep(20000);
      Touch_Up();
 }
 
@@ -188,19 +187,19 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18); // libbase
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
     if(!BattleManager) return;
-    Oneself = getPtr641(BattleManager + 0x50);
+    Oneself = getPtr641(BattleManager + 0x50); // m_LocalPlayerShow
     if(!Oneself) return;
 
     Vector3 MyPosition;
-    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
+    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition)); // 0x294 (m_vCachePosition)
     
     MonsterCount = 0;
-    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
+    uintptr_t Showmonster = getPtr641(BattleManager + 0x80); // 0x80 (m_ShowMonsters)
     if (Showmonster != 0) {
         int monsterCount = Read<int>(Showmonster + 0x18);
         uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
@@ -210,11 +209,11 @@ void MonsterRetribution() {
             for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
                 uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
                 if (currentMonsterPtr == 0) continue;
-                int monsterID = Read<int>(currentMonsterPtr + 0x194);
-                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
-                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
-                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
-                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
+                int monsterID = Read<int>(currentMonsterPtr + 0x194); // m_ID (ShowEntity)
+                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac); // m_Hp (ShowEntity)
+                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0); // m_HpMax (ShowEntity)
+                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294); // m_vCachePosition (ShowEntity)
+                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd); // m_bDeath (ShowEntity)
                 bool mDead = (deadFlag != 0);
                 std::string mName = MonsterToString(monsterID);
                 if (mName.empty()) {
@@ -245,8 +244,8 @@ int CalculateRetriDamage(int Level, int KillWild) {
 
 void CheckAndTriggerRetribution() {
     if (!autoRetribution || !Oneself || MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0x198);
-    int killWild = Read<int>(Oneself + 0xa38);
+    int myLevel = Read<int>(Oneself + 0x198); // _KillWildTimes (LogicPlayer)
+    int killWild = Read<int>(Oneself + 0xA38); // m_Level (ShowEntity)
     int retriDmg = CalculateRetriDamage(myLevel, killWild);
     for (int i = 0; i < MonsterCount; i++) {
         if (!monster[i].isValid || monster[i].isDead) {
@@ -257,7 +256,7 @@ void CheckAndTriggerRetribution() {
             lastRetriTriggered[i] = false;
             continue;
         }
-        int id = Read<int>(monster[i].address + 0x194);
+        int id = Read<int>(monster[i].address + 0x194); // m_ID (ShowEntity}
         bool isTarget = false;
         if (AutoRetributionLord && (id == 2002)) isTarget = true;
         if (AutoRetributionTurtle && (id == 2003)) isTarget = true;
@@ -287,21 +286,21 @@ void DrawMonster(ImDrawList *Draw) {
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x7641e18);
+    long a1 = getPtr641(libbase + 0x7641e18); // libbase
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
-    size_t m_LocalPlayerShow = 0x50;
-    size_t m_ShowPlayers = 0x78;
-    size_t m_ShowMonsters = 0x80;
+    size_t m_LocalPlayerShow = 0x50; // BattleManager
+    size_t m_ShowPlayers = 0x78; // BattleManager
+    size_t m_ShowMonsters = 0x80; // BattleManager
     
-    size_t m_iType = 0x80;
-    size_t m_Hp = 0x1ac;
-    size_t m_HpMax = 0x1b0;
-    size_t m_bDeath = 0xcd;
-    size_t m_bSameCampType = 0x2b1;
-    size_t m_vCachePosition = 0x294;
-    size_t m_HeroName = 0x8d8;
+    size_t m_iType = 0x80; // ShowEntity
+    size_t m_Hp = 0x1ac; // ShowEntity
+    size_t m_HpMax = 0x1b0; // ShowEntity
+    size_t m_bDeath = 0xcd; // ShowEntity
+    size_t m_bSameCampType = 0x2b1; // ShowEntity
+    size_t m_vCachePosition = 0x294; // ShowEntity
+    size_t m_HeroName = 0x8d8; // ShowPlayer
     
     long selfp = getPtr641(a32 + m_LocalPlayerShow);
     
@@ -324,7 +323,7 @@ void DrawMonster(ImDrawList *Draw) {
         if (is_team) {
             continue;
         }
-        auto HeroID = Read<int>(Objaddr + 0x194);     
+        auto HeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
 
         auto death = Read<bool>(Objaddr + m_bDeath);
         if (death) {
@@ -443,8 +442,7 @@ void DrawMonster(ImDrawList *Draw) {
             }
         }
     }
-
-    // ESP MONSTER - Hanya tampil jika enableESPMonster = true
+    
     if (enableESPMonster) {
         long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
         uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
@@ -461,7 +459,7 @@ void DrawMonster(ImDrawList *Draw) {
                 continue;
             }
 
-            auto mHeroID = Read<int>(Objaddr + 0x194);        
+            auto mHeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
             auto type = Read<int>(Objaddr + m_iType);
             
             auto death = Read<bool>(Objaddr + m_bDeath);
@@ -741,14 +739,14 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 8.0f;
+    ImGui::GetStyle().ScrollbarSize = 20.0f;
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
-        usleep(500);  // Reduced from 1000us to 500us for faster polling
+        usleep(250);
     }
     shutdown();
     Touch_Close();
