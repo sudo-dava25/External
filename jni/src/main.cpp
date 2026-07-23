@@ -551,6 +551,56 @@ void DrawMonster(ImDrawList *Draw) {
     }
 }
 
+void RoomInfoList() {
+    uintptr_t LogicBattleManager = getPtr641(libbase + 0x7641e18);
+    if (!LogicBattleManager) return;
+
+    long playersList = getPtr641(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x10); // m_ShowPlayers
+    int playerCount = Read<int>(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x18);
+    if (playerCount <= 0 || !playersList) return;
+
+    long a1 = getPtr641(libbase + 0x664d190); // BattleManager base
+    long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
+    long a32 = getPtr641((a2 << 1) >> 1);
+
+    long selfp = getPtr641(a32 + 0x50); // m_LocalPlayerShow
+
+    if (!selfp) return;
+
+    uint32_t myTeamCamp = Read<uint32_t>(selfp + 0x30); // offset iCamp
+
+    int playerB = 0;
+    int playerR = 0;
+
+    for (int i = 0; i < playerCount; i++) {
+        long obj = getPtr641(playersList + i * 8);
+        if (!obj) continue;
+
+        auto nameObj = *(String**)(obj + 0x40);
+        std::string name = (nameObj && nameObj->CString()) ? nameObj->CString() : "Unknown";
+
+        uint64_t lUid = Read<uint64_t>(obj + 0x20);
+        uint32_t zoneId = Read<uint32_t>(obj + 0x60);
+        std::string uid = std::to_string(lUid) + " (" + std::to_string(zoneId) + ")";
+
+        uint32_t heroid = Read<uint32_t>(obj + 0x4C);
+        int spellId = Read<int>(obj + 0x64);
+        uint32_t rank = Read<uint32_t>(obj + 0x128);
+        uint32_t myth = Read<uint32_t>(obj + 0x1CC);
+        uint32_t camp = Read<uint32_t>(obj + 0x30);
+
+        std::string hero = HeroToString(heroid);
+        std::string spell = SpellToString(spellId);
+        std::string rankStr = RankToString(rank, myth);
+
+        if (camp == myTeamCamp && playerB < 5) {
+            PlayerB[playerB++] = { name, uid, hero, spell, rankStr };
+        } else if (playerR < 5) {
+            PlayerR[playerR++] = { name, uid, hero, spell, rankStr };
+        }
+    }
+}
+
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
@@ -756,6 +806,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
+        RoomInfoList();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
