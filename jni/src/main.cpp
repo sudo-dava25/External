@@ -88,6 +88,15 @@ bool AutoRetributionTurtle = false;
 float retriTouchX = 1575.0f;
 float retriTouchY = 661.0f;
 
+// Fast Change Target Mode
+enum RetriTargetMode {
+    RETRI_TARGET_MANUAL = 0,
+    RETRI_TARGET_BUFF_ONLY,
+    RETRI_TARGET_BOSS_ONLY
+};
+
+RetriTargetMode currentRetriMode = RETRI_TARGET_MANUAL;
+
 std::string fshy(uintptr_t address)
 {
     if (!address) return "";
@@ -655,9 +664,64 @@ void Layout_tick_UI() {
 
             ImGui::Spacing();
             ImGui::Separator();
-            ImGui::Text(oxorany("Target Selection:"));
-            ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
-            ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
+            
+            // Fast Change Target Section
+            ImGui::Text(oxorany("Fast Change Target:"));
+            ImGui::Spacing();
+            
+            // Buff Only Button
+            if (ImGui::Button(oxorany("Buff Only"), ImVec2(-1, 40))) {
+                currentRetriMode = RETRI_TARGET_BUFF_ONLY;
+                AutoRetributionBuff = true;
+                AutoRetributionBoss = false;
+            }
+            
+            // Boss Only Button
+            if (ImGui::Button(oxorany("Boss Only"), ImVec2(-1, 40))) {
+                currentRetriMode = RETRI_TARGET_BOSS_ONLY;
+                AutoRetributionBuff = false;
+                AutoRetributionBoss = true;
+            }
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            
+            // Mode indicator
+            const char* modeText = "Manual";
+            ImColor modeColor = IM_COL32(150, 150, 150, 255);
+            
+            switch (currentRetriMode) {
+                case RETRI_TARGET_BUFF_ONLY:
+                    modeText = "MODE: Buff Only";
+                    modeColor = IM_COL32(255, 140, 0, 255);  // Orange
+                    break;
+                case RETRI_TARGET_BOSS_ONLY:
+                    modeText = "MODE: Boss Only";
+                    modeColor = IM_COL32(255, 0, 0, 255);    // Red
+                    break;
+                case RETRI_TARGET_MANUAL:
+                default:
+                    modeText = "MODE: Manual (Checkbox)";
+                    modeColor = IM_COL32(255, 255, 0, 255);  // Yellow
+                    break;
+            }
+            
+            ImGui::TextColored(ImVec4(modeColor.Value.x, modeColor.Value.y, modeColor.Value.z, 1.0f), 
+                               oxorany("%s"), modeText);
+            
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text(oxorany("Manual Target Selection:"));
+            
+            // Checkbox manual
+            bool manualChanged = false;
+            if (ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff)) manualChanged = true;
+            if (ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss)) manualChanged = true;
+            
+            // Jika user mengubah checkbox manual, switch ke mode manual
+            if (manualChanged) {
+                currentRetriMode = RETRI_TARGET_MANUAL;
+            }
             
             ImGui::EndTabItem();
         }
