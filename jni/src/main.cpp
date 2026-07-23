@@ -248,8 +248,8 @@ int CalculateRetriDamage(int Level, int KillWild) {
 
 void CheckAndTriggerRetribution() {
     if (!autoRetribution || !Oneself || MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0xA60);
-    int killWild = Read<int>(Oneself + 0x198);
+    int myLevel = Read<int>(Oneself + 0x198);
+    int killWild = Read<int>(Oneself + 0xa38);
     int retriDmg = CalculateRetriDamage(myLevel, killWild);
     for (int i = 0; i < MonsterCount; i++) {
         if (!monster[i].isValid || monster[i].isDead) {
