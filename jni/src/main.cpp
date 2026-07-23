@@ -28,6 +28,8 @@
 #include <linux/input.h>
 #include <vector>
 #include <functional>
+#include <sys/stat.h>
+#include <openssl/md5.h>
 #include "Memory/Memory.h"
 #include "Memory/PatternScanner.h"
 
@@ -50,6 +52,149 @@
 
 using namespace Memory;
 
+// ==================== TRIAL SYSTEM ====================
+#define TRIAL_FILE "/data/local/tmp/.volks_trial"
+#define TRIAL_DURATION_DAYS 3
+#define ENCRYPTION_KEY 0xAB
+
+std::string GetDeviceHWID() {
+    char prop_build[PROP_VALUE_MAX];
+    char prop_serial[PROP_VALUE_MAX];
+    char prop_model[PROP_VALUE_MAX];
+    
+    __system_property_get("ro.build.fingerprint", prop_build);
+    __system_property_get("ro.serialno", prop_serial);
+    __system_property_get("ro.product.model", prop_model);
+    
+    std::string combined = std::string(prop_build) + std::string(prop_serial) + std::string(prop_model);
+    
+    unsigned char hash[MD5_DIGEST_LENGTH];
+    MD5((unsigned char*)combined.c_str(), combined.length(), hash);
+    
+    char hex[33];
+    for(int i = 0; i < MD5_DIGEST_LENGTH; i++) {
+        sprintf(hex + (i * 2), "%02x", hash[i]);
+    }
+    hex[32] = '\0';
+    
+    return std::string(hex);
+}
+
+std::string XorEncrypt(std::string data, char key) {
+    std::string result = data;
+    for(size_t i = 0; i < data.length(); i++) {
+        result[i] = data[i] ^ key;
+    }
+    return result;
+}
+
+bool CheckTrial() {
+    std::string hwid = GetDeviceHWID();
+    
+    std::ifstream trialFile(TRIAL_FILE);
+    if (!trialFile.good()) {
+        return false;
+    }
+    
+    std::string encryptedData;
+    std::getline(trialFile, encryptedData);
+    trialFile.close();
+    
+    std::string decrypted = XorEncrypt(encryptedData, ENCRYPTION_KEY);
+    
+    size_t separator = decrypted.find('|');
+    if (separator == std::string::npos) {
+        return false;
+    }
+    
+    std::string savedHWID = decrypted.substr(0, separator);
+    time_t expiryTime = std::stoll(decrypted.substr(separator + 1));
+    
+    if (savedHWID != hwid) {
+        return false;
+    }
+    
+    time_t currentTime = time(nullptr);
+    if (currentTime > expiryTime) {
+        remove(TRIAL_FILE);
+        return false;
+    }
+    
+    return true;
+}
+
+bool ActivateTrial(const std::string& activationKey) {
+    const std::string SECRET_KEY = "VOLKS2024SECRET123";
+    
+    if (activationKey != SECRET_KEY) {
+        return false;
+    }
+    
+    std::string hwid = GetDeviceHWID();
+    time_t expiryTime = time(nullptr) + (TRIAL_DURATION_DAYS * 24 * 60 * 60);
+    
+    std::string data = hwid + "|" + std::to_string(expiryTime);
+    std::string encrypted = XorEncrypt(data, ENCRYPTION_KEY);
+    
+    std::ofstream trialFile(TRIAL_FILE);
+    if (!trialFile.good()) {
+        return false;
+    }
+    trialFile << encrypted;
+    trialFile.close();
+    
+    chmod(TRIAL_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    
+    return true;
+}
+
+std::string GenerateActivationKey(const std::string& userHWID, int durationDays) {
+    const std::string SECRET_KEY = "VOLKS2024SECRET123";
+    
+    std::string keyBase = userHWID + SECRET_KEY + std::to_string(durationDays);
+    
+    unsigned char hash[MD5_DIGEST_LENGTH];
+    MD5((unsigned char*)keyBase.c_str(), keyBase.length(), hash);
+    
+    char key[17];
+    for(int i = 0; i < 8; i++) {
+        sprintf(key + (i * 2), "%02x", hash[i]);
+    }
+    key[16] = '\0';
+    
+    std::string finalKey = "VOLKS-";
+    finalKey += std::string(key).substr(0, 4) + "-";
+    finalKey += std::string(key).substr(4, 4) + "-";
+    finalKey += std::string(key).substr(8, 4) + "-";
+    finalKey += std::string(key).substr(12, 4);
+    
+    for(auto& c : finalKey) {
+        c = toupper(c);
+    }
+    
+    return finalKey;
+}
+
+int GetTrialRemainingHours() {
+    std::ifstream trialFile(TRIAL_FILE);
+    if (!trialFile.good()) return 0;
+    
+    std::string encryptedData;
+    std::getline(trialFile, encryptedData);
+    trialFile.close();
+    
+    std::string decrypted = XorEncrypt(encryptedData, ENCRYPTION_KEY);
+    size_t separator = decrypted.find('|');
+    if (separator == std::string::npos) return 0;
+    
+    time_t expiryTime = std::stoll(decrypted.substr(separator + 1));
+    time_t currentTime = time(nullptr);
+    
+    int remaining = (expiryTime - currentTime) / 3600;
+    return remaining > 0 ? remaining : 0;
+}
+
+// ==================== VARIABLES ====================
 bool main_thread_flag = true;
 int abs_ScreenX = 0;
 int abs_ScreenY = 0;
@@ -67,8 +212,6 @@ bool drawDistance = true;
 bool drawHealth = true;
 bool drawHeroName = true;
 
-
-
 bool drawMonsterName = true;
 bool drawMonsterDistance = true;
 bool drawMonsterHealth = true;
@@ -78,8 +221,8 @@ long libbase = 0;
 
 bool lastRetriTriggered[20] = {false};
 bool autoRetribution = false;
-bool AutoRetributionBuff = false;  // Red & Blue Buff
-bool AutoRetributionBoss = false;  // Lord & Turtle
+bool AutoRetributionBuff = false;
+bool AutoRetributionBoss = false;
 bool AutoRetributionRed = false;
 bool AutoRetributionBlue = false;
 bool AutoRetributionLord = false;
@@ -90,13 +233,16 @@ float retriTouchY = 661.0f;
 
 // Floating Button State
 bool showFloatingButton = true;
-ImVec2 floatingButtonPos = ImVec2(100, 300);  // Posisi awal
-ImVec2 floatingButtonSize = ImVec2(200, 200);   // Ukuran button
+ImVec2 floatingButtonPos = ImVec2(100, 300);
+ImVec2 floatingButtonSize = ImVec2(85, 85);
 bool isDraggingFloating = false;
 ImVec2 dragOffset = ImVec2(0, 0);
+int floatingTargetMode = 0;
 
-// Target mode: 0 = Buff, 1 = Boss
-int floatingTargetMode = 0;  // Default: Buff
+// Trial state
+bool isTrialValid = false;
+char activationKeyInput[256] = "";
+bool showActivationPopup = true;
 
 std::string fshy(uintptr_t address)
 {
@@ -109,8 +255,6 @@ std::string fshy(uintptr_t address)
 
     return utf16_to_utf8(buffer, stringLength);
 }
-
-
 
 struct String {
     char pad_0000[0x10];
@@ -126,7 +270,7 @@ struct String {
 };
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470); // typeinfo (GetMainCamera)
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
@@ -200,19 +344,19 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18); // libbase
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
     if(!BattleManager) return;
-    Oneself = getPtr641(BattleManager + 0x50); // m_LocalPlayerShow
+    Oneself = getPtr641(BattleManager + 0x50);
     if(!Oneself) return;
 
     Vector3 MyPosition;
-    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition)); // 0x294 (m_vCachePosition)
+    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
     
     MonsterCount = 0;
-    uintptr_t Showmonster = getPtr641(BattleManager + 0x80); // 0x80 (m_ShowMonsters)
+    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
     if (Showmonster != 0) {
         int monsterCount = Read<int>(Showmonster + 0x18);
         uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
@@ -222,11 +366,11 @@ void MonsterRetribution() {
             for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
                 uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
                 if (currentMonsterPtr == 0) continue;
-                int monsterID = Read<int>(currentMonsterPtr + 0x194); // m_ID (ShowEntity)
-                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac); // m_Hp (ShowEntity)
-                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0); // m_HpMax (ShowEntity)
-                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294); // m_vCachePosition (ShowEntity)
-                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd); // m_bDeath (ShowEntity)
+                int monsterID = Read<int>(currentMonsterPtr + 0x194);
+                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
+                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
+                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
+                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
                 bool mDead = (deadFlag != 0);
                 std::string mName = MonsterToString(monsterID);
                 if (mName.empty()) {
@@ -257,8 +401,8 @@ int CalculateRetriDamage(int Level, int KillWild) {
 
 void CheckAndTriggerRetribution() {
     if (!autoRetribution || !Oneself || MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0x198); // _KillWildTimes (LogicPlayer)
-    int killWild = Read<int>(Oneself + 0xA38); // m_Level (ShowEntity)
+    int myLevel = Read<int>(Oneself + 0x198);
+    int killWild = Read<int>(Oneself + 0xA38);
     int retriDmg = CalculateRetriDamage(myLevel, killWild);
     for (int i = 0; i < MonsterCount; i++) {
         if (!monster[i].isValid || monster[i].isDead) {
@@ -269,10 +413,10 @@ void CheckAndTriggerRetribution() {
             lastRetriTriggered[i] = false;
             continue;
         }
-        int id = Read<int>(monster[i].address + 0x194); // m_ID (ShowEntity}
+        int id = Read<int>(monster[i].address + 0x194);
         bool isTarget = false;
-        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;  // Lord & Turtle
-        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;  // Red & Blue Buff
+        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;
+        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;
         if (!isTarget) {
             lastRetriTriggered[i] = false;
             continue;
@@ -294,111 +438,220 @@ void DrawFloatingRetriButton() {
     ImDrawList* draw = ImGui::GetForegroundDrawList();
     ImGuiIO& io = ImGui::GetIO();
     
+    floatingButtonSize = ImVec2(85, 85);
+    float cornerRadius = 12.0f;
+    
     ImVec2 buttonMin = floatingButtonPos;
     ImVec2 buttonMax = ImVec2(floatingButtonPos.x + floatingButtonSize.x, 
                                floatingButtonPos.y + floatingButtonSize.y);
     
-    // Deteksi klik/drag
-    ImVec2 mousePos = io.MousePos;
-    bool isHovering = (mousePos.x >= buttonMin.x && mousePos.x <= buttonMax.x &&
-                       mousePos.y >= buttonMin.y && mousePos.y <= buttonMax.y);
+    ImVec2 buttonCenter = ImVec2(floatingButtonPos.x + floatingButtonSize.x / 2,
+                                  floatingButtonPos.y + floatingButtonSize.y / 2);
     
-    // Handle drag
-    if (isHovering && ImGui::IsMouseDown(0) && !isDraggingFloating) {
-        isDraggingFloating = true;
-        dragOffset = ImVec2(mousePos.x - floatingButtonPos.x, mousePos.y - floatingButtonPos.y);
+    ImVec2 mousePos = io.MousePos;
+    
+    bool isHovering = (mousePos.x >= buttonMin.x - 10 && mousePos.x <= buttonMax.x + 10 &&
+                       mousePos.y >= buttonMin.y - 10 && mousePos.y <= buttonMax.y + 10);
+    
+    static bool wasDragging = false;
+    static ImVec2 dragStartPos;
+    static float dragDistance = 0;
+    
+    if (isHovering && ImGui::IsMouseClicked(0)) {
+        isDraggingFloating = false;
+        wasDragging = false;
+        dragStartPos = mousePos;
+        dragDistance = 0;
     }
     
-    if (isDraggingFloating && ImGui::IsMouseDown(0)) {
-        floatingButtonPos.x = mousePos.x - dragOffset.x;
-        floatingButtonPos.y = mousePos.y - dragOffset.y;
+    if (ImGui::IsMouseDown(0) && isHovering) {
+        ImVec2 delta = ImVec2(mousePos.x - dragStartPos.x, mousePos.y - dragStartPos.y);
+        dragDistance = sqrt(delta.x * delta.x + delta.y * delta.y);
         
-        // Batasi agar tidak keluar layar
-        if (floatingButtonPos.x < 0) floatingButtonPos.x = 0;
-        if (floatingButtonPos.y < 0) floatingButtonPos.y = 0;
-        if (floatingButtonPos.x > abs_ScreenX - floatingButtonSize.x) 
-            floatingButtonPos.x = abs_ScreenX - floatingButtonSize.x;
-        if (floatingButtonPos.y > abs_ScreenY - floatingButtonSize.y) 
-            floatingButtonPos.y = abs_ScreenY - floatingButtonSize.y;
+        if (dragDistance > 5.0f) {
+            isDraggingFloating = true;
+            wasDragging = true;
+            
+            floatingButtonPos.x = mousePos.x - floatingButtonSize.x / 2;
+            floatingButtonPos.y = mousePos.y - floatingButtonSize.y / 2;
+            
+            if (floatingButtonPos.x < 0) floatingButtonPos.x = 0;
+            if (floatingButtonPos.y < 0) floatingButtonPos.y = 0;
+            if (floatingButtonPos.x > abs_ScreenX - floatingButtonSize.x) 
+                floatingButtonPos.x = abs_ScreenX - floatingButtonSize.x;
+            if (floatingButtonPos.y > abs_ScreenY - floatingButtonSize.y) 
+                floatingButtonPos.y = abs_ScreenY - floatingButtonSize.y;
+        }
+    }
+    
+    if (ImGui::IsMouseReleased(0) && isHovering && !wasDragging && dragDistance <= 5.0f) {
+        floatingTargetMode = (floatingTargetMode == 0) ? 1 : 0;
+        
+        if (floatingTargetMode == 0) {
+            AutoRetributionBuff = true;
+            AutoRetributionBoss = false;
+        } else {
+            AutoRetributionBuff = false;
+            AutoRetributionBoss = true;
+        }
     }
     
     if (!ImGui::IsMouseDown(0)) {
-        // Klik (bukan drag) - switch target
-        if (isHovering && !isDraggingFloating) {
-            floatingTargetMode = (floatingTargetMode == 0) ? 1 : 0;
-            
-            if (floatingTargetMode == 0) {
-                // Buff Only
-                AutoRetributionBuff = true;
-                AutoRetributionBoss = false;
-            } else {
-                // Boss Only
-                AutoRetributionBuff = false;
-                AutoRetributionBoss = true;
-            }
-        }
         isDraggingFloating = false;
+        wasDragging = false;
     }
     
-    // Warna berdasarkan mode
-    ImColor bgColor, textColor;
+    ImColor bgColor, borderColor;
     const char* label;
     
     if (floatingTargetMode == 0) {
-        bgColor = IM_COL32(255, 140, 0, 220);   // Orange untuk Buff
-        textColor = IM_COL32(255, 255, 255, 255);
+        bgColor = IM_COL32(255, 140, 0, 230);
+        borderColor = IM_COL32(255, 180, 50, 255);
         label = "BUFF";
     } else {
-        bgColor = IM_COL32(255, 0, 0, 220);     // Red untuk Boss
-        textColor = IM_COL32(255, 255, 255, 255);
+        bgColor = IM_COL32(220, 30, 30, 230);
+        borderColor = IM_COL32(255, 80, 80, 255);
         label = "BOSS";
     }
     
-    // Glow effect (opsional)
     if (isHovering) {
-        draw->AddCircleFilled(ImVec2(floatingButtonPos.x + floatingButtonSize.x/2, 
-                                      floatingButtonPos.y + floatingButtonSize.y/2), 
-                               35.0f, IM_COL32(255, 255, 255, 40), 32);
+        bgColor.Value.w = 255;
+        if (floatingTargetMode == 0) {
+            bgColor = IM_COL32(255, 160, 20, 255);
+        } else {
+            bgColor = IM_COL32(255, 40, 40, 255);
+        }
     }
     
-    // Draw button background (rounded)
-    draw->AddRectFilled(buttonMin, buttonMax, bgColor, floatingButtonSize.x / 2);
-    draw->AddRect(buttonMin, buttonMax, IM_COL32(255, 255, 255, 180), floatingButtonSize.x / 2, 0, 2.0f);
+    draw->AddRectFilled(buttonMin, buttonMax, bgColor, cornerRadius);
+    draw->AddRect(buttonMin, buttonMax, borderColor, cornerRadius, 0, 2.5f);
     
-    // Draw label
     ImVec2 textSize = ImGui::CalcTextSize(label);
-    ImVec2 textPos = ImVec2(floatingButtonPos.x + (floatingButtonSize.x - textSize.x) / 2,
-                             floatingButtonPos.y + (floatingButtonSize.y - textSize.y) / 2);
-    draw->AddText(textPos, textColor, label);
+    ImVec2 textPos = ImVec2(buttonCenter.x - textSize.x / 2,
+                             buttonCenter.y - textSize.y / 2);
+    
+    draw->AddText(ImVec2(textPos.x + 1, textPos.y + 1), IM_COL32(0, 0, 0, 100), label);
+    draw->AddText(textPos, IM_COL32(255, 255, 255, 255), label);
+}
+
+void DrawActivationPopup() {
+    if (!showActivationPopup) return;
+    
+    ImGui::SetNextWindowSize(ImVec2(400, 250), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(abs_ScreenX/2 - 200, abs_ScreenY/2 - 125), ImGuiCond_Always);
+    
+    ImGui::Begin("Trial Activation", &showActivationPopup, 
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | 
+                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+    
+    ImGui::Spacing();
+    ImGui::TextColored(ImVec4(1.0f, 0.84f, 0.0f, 1.0f), "VOLKS MLBB External Cheat");
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    std::string hwid = GetDeviceHWID();
+    ImGui::Text("Your HWID:");
+    ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "%s", hwid.c_str());
+    
+    ImGui::Spacing();
+    ImGui::Text("Activation Key:");
+    ImGui::InputText("##actkey", activationKeyInput, 256);
+    
+    ImGui::Spacing();
+    
+    if (ImGui::Button("Activate", ImVec2(-1, 35))) {
+        if (ActivateTrial(std::string(activationKeyInput))) {
+            isTrialValid = true;
+            showActivationPopup = false;
+        } else {
+            ImGui::OpenPopup("Invalid Key");
+        }
+    }
+    
+    if (ImGui::BeginPopupModal("Invalid Key", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Invalid activation key!");
+        ImGui::Spacing();
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), 
+                       "Contact admin to get activation key");
+    
+    ImGui::End();
+}
+
+void DrawTrialInfo() {
+    int remainingHours = GetTrialRemainingHours();
+    if (remainingHours <= 0) {
+        isTrialValid = false;
+        showActivationPopup = true;
+        return;
+    }
+    
+    int days = remainingHours / 24;
+    int hours = remainingHours % 24;
+    
+    char info[128];
+    if (days > 0) {
+        sprintf(info, "TRIAL: %d day(s) %d hour(s) remaining", days, hours);
+    } else {
+        sprintf(info, "TRIAL: %d hour(s) remaining", hours);
+    }
+    
+    ImVec2 textSize = ImGui::CalcTextSize(info);
+    ImDrawList* draw = ImGui::GetForegroundDrawList();
+    
+    draw->AddRectFilled(ImVec2(abs_ScreenX/2 - textSize.x/2 - 10, 10),
+                        ImVec2(abs_ScreenX/2 + textSize.x/2 + 10, 40),
+                        IM_COL32(0, 0, 0, 180), 8.0f);
+    
+    ImColor textColor;
+    if (remainingHours < 24) {
+        textColor = IM_COL32(255, 100, 100, 255);
+    } else {
+        textColor = IM_COL32(100, 255, 100, 255);
+    }
+    
+    draw->AddText(ImVec2(abs_ScreenX/2 - textSize.x/2, 18), textColor, info);
 }
 
 void DrawMonster(ImDrawList *Draw) {
+    if (!isTrialValid) {
+        return;
+    }
+    
+    DrawTrialInfo();
+    
     if (autoRetribution) {
         ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(255, 255, 255, 180), 16);
         ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(0, 0, 0, 255), 16, 2.5f);
     }
 
-    // Draw floating retri button
     DrawFloatingRetriButton();
 
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x7641e18); // libbase
+    long a1 = getPtr641(libbase + 0x7641e18);
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
-    size_t m_LocalPlayerShow = 0x50; // BattleManager
-    size_t m_ShowPlayers = 0x78; // BattleManager
-    size_t m_ShowMonsters = 0x80; // BattleManager
+    size_t m_LocalPlayerShow = 0x50;
+    size_t m_ShowPlayers = 0x78;
+    size_t m_ShowMonsters = 0x80;
     
-    size_t m_iType = 0x80; // ShowEntity
-    size_t m_Hp = 0x1ac; // ShowEntity
-    size_t m_HpMax = 0x1b0; // ShowEntity
-    size_t m_bDeath = 0xcd; // ShowEntity
-    size_t m_bSameCampType = 0x2b1; // ShowEntity
-    size_t m_vCachePosition = 0x294; // ShowEntity
-    size_t m_HeroName = 0x8d8; // ShowPlayer
+    size_t m_iType = 0x80;
+    size_t m_Hp = 0x1ac;
+    size_t m_HpMax = 0x1b0;
+    size_t m_bDeath = 0xcd;
+    size_t m_bSameCampType = 0x2b1;
+    size_t m_vCachePosition = 0x294;
+    size_t m_HeroName = 0x8d8;
     
     long selfp = getPtr641(a32 + m_LocalPlayerShow);
     
@@ -421,7 +674,7 @@ void DrawMonster(ImDrawList *Draw) {
         if (is_team) {
             continue;
         }
-        auto HeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
+        auto HeroID = Read<int>(Objaddr + 0x194);
 
         auto death = Read<bool>(Objaddr + m_bDeath);
         if (death) {
@@ -556,7 +809,7 @@ void DrawMonster(ImDrawList *Draw) {
                 continue;
             }
 
-            auto mHeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
+            auto mHeroID = Read<int>(Objaddr + 0x194);
             auto type = Read<int>(Objaddr + m_iType);
             
             auto death = Read<bool>(Objaddr + m_bDeath);
@@ -658,6 +911,11 @@ void DrawMonster(ImDrawList *Draw) {
     }
 
 void Layout_tick_UI() {
+    if (!isTrialValid) {
+        DrawActivationPopup();
+        return;
+    }
+    
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
     static ImVec2 windowSize = ImVec2(715, 400);
@@ -747,8 +1005,8 @@ void Layout_tick_UI() {
             ImGui::Separator();
             
             ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
-            ImGui::SliderFloat(oxorany("Retri Pos X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-            ImGui::SliderFloat(oxorany("Retri Pos Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
 
             ImGui::Spacing();
             ImGui::Separator();
@@ -821,9 +1079,14 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     ImGui::GetStyle().WindowRounding = 25.0f;
     ImGui::GetStyle().ScrollbarSize = 25.0f;
     ImGui::StyleColorsClassic();
+    
+    isTrialValid = CheckTrial();
+    
     while (main_thread_flag) {
-        MonsterRetribution();
-        CheckAndTriggerRetribution();
+        if (isTrialValid) {
+            MonsterRetribution();
+            CheckAndTriggerRetribution();
+        }
         drawBegin();
         Layout_tick_UI();
         drawEnd();
