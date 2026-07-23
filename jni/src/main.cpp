@@ -562,62 +562,26 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    // Tambahkan flag untuk menghilangkan scrollbar
+    // Tambahkan flag untuk menghilangkan scrollbar dan resize
     window_flags |= ImGuiWindowFlags_NoScrollbar;
     window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
+    window_flags |= ImGuiWindowFlags_NoResize;
     
     static ImVec2 windowSize = ImVec2(600, 450);
-    static bool isResizing = false;
-    static ImVec2 resizeStartSize;
-    static ImVec2 resizeStartPos;
     
     ImGui::SetNextWindowSizeConstraints(ImVec2(500, 350), ImVec2(700, 600));
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
     ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
     
-    // Hapus scrollbar secara global di dalam window
+    // Hapus scrollbar secara paksa
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window) {
         window->ScrollbarY = false;
         window->ScrollbarX = false;
+        window->ScrollbarSizes = ImVec2(0, 0);
     }
     
-    ImVec2 windowPos = ImGui::GetWindowPos();
-    ImVec2 currentWindowSize = ImGui::GetWindowSize();
-    ImVec2 bottomRight = ImVec2(windowPos.x + currentWindowSize.x, windowPos.y + currentWindowSize.y);
-    
-    float resizeHandleSize = 20.0f;
-    ImVec2 resizeHandleMin = ImVec2(bottomRight.x - resizeHandleSize, bottomRight.y - resizeHandleSize);
-    ImVec2 resizeHandleMax = bottomRight;
-    
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    drawList->AddRectFilled(resizeHandleMin, resizeHandleMax, IM_COL32(100, 100, 100, 200));
-    drawList->AddRect(resizeHandleMin, resizeHandleMax, IM_COL32(200, 200, 200, 255), 0, 0, 1.0f);
-    
-    ImVec2 mousePos = ImGui::GetMousePos();
-    if (ImGui::IsMouseHoveringRect(resizeHandleMin, resizeHandleMax)) {
-        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNWSE);
-        if (ImGui::IsMouseDown(0)) {
-            isResizing = true;
-            resizeStartSize = currentWindowSize;
-            resizeStartPos = mousePos;
-        }
-    }
-    
-    if (isResizing && ImGui::IsMouseDown(0)) {
-        ImVec2 delta = ImVec2(mousePos.x - resizeStartPos.x, mousePos.y - resizeStartPos.y);
-        ImVec2 newSize = ImVec2(
-            std::max(500.0f, resizeStartSize.x + delta.x),
-            std::max(350.0f, resizeStartSize.y + delta.y)
-        );
-        newSize.x = std::min(700.0f, newSize.x);
-        newSize.y = std::min(600.0f, newSize.y);
-        windowSize = newSize;
-    } else if (!ImGui::IsMouseDown(0)) {
-        isResizing = false;
-    }
-
     ImGui::Separator();
 
     if (ImGui::BeginTabBar("####MainTabs", ImGuiTabBarFlags_None)) {
@@ -735,10 +699,11 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     
-    // Setup gaya UI
+    // Setup gaya UI - menghilangkan scrollbar sepenuhnya
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 0.0f; // Set ukuran scrollbar menjadi 0
+    ImGui::GetStyle().ScrollbarSize = 0.0f;      // Hilangkan scrollbar
     ImGui::GetStyle().ScrollbarRounding = 0.0f;
+    ImGui::GetStyle().GrabRounding = 0.0f;
     
     while (main_thread_flag) {
         MonsterRetribution();
