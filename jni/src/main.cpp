@@ -167,7 +167,7 @@ bool bMonster(int iValue) {
 
 void Touch_Tap(int x, int y) {
      Touch_Down((float)x, (float)y);
-     usleep(20000);  // Reduced from 80ms to 30ms for faster response
+     usleep(30000);  // Reduced from 80ms to 30ms for faster response
      Touch_Up();
 }
 
@@ -737,15 +737,15 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
         return -1;
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
-    ImGui::GetStyle().WindowRounding = 20.0f;
-    ImGui::GetStyle().ScrollbarSize = 8.0f;
+    ImGui::GetStyle().WindowRounding = 25.0f;
+    ImGui::GetStyle().ScrollbarSize = 13.0f;
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
-        usleep(300);  // Reduced from 1000us to 500us for faster polling
+        usleep(500);  // Reduced from 1000us to 500us for faster polling
     }
     shutdown();
     Touch_Close();
