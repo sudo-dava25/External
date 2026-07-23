@@ -28,8 +28,6 @@
 #include <linux/input.h>
 #include <vector>
 #include <functional>
-#include <sys/stat.h>
-#include <openssl/md5.h>
 #include "Memory/Memory.h"
 #include "Memory/PatternScanner.h"
 
@@ -52,149 +50,6 @@
 
 using namespace Memory;
 
-// ==================== TRIAL SYSTEM ====================
-#define TRIAL_FILE "/data/local/tmp/.volks_trial"
-#define TRIAL_DURATION_DAYS 3
-#define ENCRYPTION_KEY 0xAB
-
-std::string GetDeviceHWID() {
-    char prop_build[PROP_VALUE_MAX];
-    char prop_serial[PROP_VALUE_MAX];
-    char prop_model[PROP_VALUE_MAX];
-    
-    __system_property_get("ro.build.fingerprint", prop_build);
-    __system_property_get("ro.serialno", prop_serial);
-    __system_property_get("ro.product.model", prop_model);
-    
-    std::string combined = std::string(prop_build) + std::string(prop_serial) + std::string(prop_model);
-    
-    unsigned char hash[MD5_DIGEST_LENGTH];
-    MD5((unsigned char*)combined.c_str(), combined.length(), hash);
-    
-    char hex[33];
-    for(int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-        sprintf(hex + (i * 2), "%02x", hash[i]);
-    }
-    hex[32] = '\0';
-    
-    return std::string(hex);
-}
-
-std::string XorEncrypt(std::string data, char key) {
-    std::string result = data;
-    for(size_t i = 0; i < data.length(); i++) {
-        result[i] = data[i] ^ key;
-    }
-    return result;
-}
-
-bool CheckTrial() {
-    std::string hwid = GetDeviceHWID();
-    
-    std::ifstream trialFile(TRIAL_FILE);
-    if (!trialFile.good()) {
-        return false;
-    }
-    
-    std::string encryptedData;
-    std::getline(trialFile, encryptedData);
-    trialFile.close();
-    
-    std::string decrypted = XorEncrypt(encryptedData, ENCRYPTION_KEY);
-    
-    size_t separator = decrypted.find('|');
-    if (separator == std::string::npos) {
-        return false;
-    }
-    
-    std::string savedHWID = decrypted.substr(0, separator);
-    time_t expiryTime = std::stoll(decrypted.substr(separator + 1));
-    
-    if (savedHWID != hwid) {
-        return false;
-    }
-    
-    time_t currentTime = time(nullptr);
-    if (currentTime > expiryTime) {
-        remove(TRIAL_FILE);
-        return false;
-    }
-    
-    return true;
-}
-
-bool ActivateTrial(const std::string& activationKey) {
-    const std::string SECRET_KEY = "VOLKS2024SECRET123";
-    
-    if (activationKey != SECRET_KEY) {
-        return false;
-    }
-    
-    std::string hwid = GetDeviceHWID();
-    time_t expiryTime = time(nullptr) + (TRIAL_DURATION_DAYS * 24 * 60 * 60);
-    
-    std::string data = hwid + "|" + std::to_string(expiryTime);
-    std::string encrypted = XorEncrypt(data, ENCRYPTION_KEY);
-    
-    std::ofstream trialFile(TRIAL_FILE);
-    if (!trialFile.good()) {
-        return false;
-    }
-    trialFile << encrypted;
-    trialFile.close();
-    
-    chmod(TRIAL_FILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    
-    return true;
-}
-
-std::string GenerateActivationKey(const std::string& userHWID, int durationDays) {
-    const std::string SECRET_KEY = "VOLKS2024SECRET123";
-    
-    std::string keyBase = userHWID + SECRET_KEY + std::to_string(durationDays);
-    
-    unsigned char hash[MD5_DIGEST_LENGTH];
-    MD5((unsigned char*)keyBase.c_str(), keyBase.length(), hash);
-    
-    char key[17];
-    for(int i = 0; i < 8; i++) {
-        sprintf(key + (i * 2), "%02x", hash[i]);
-    }
-    key[16] = '\0';
-    
-    std::string finalKey = "VOLKS-";
-    finalKey += std::string(key).substr(0, 4) + "-";
-    finalKey += std::string(key).substr(4, 4) + "-";
-    finalKey += std::string(key).substr(8, 4) + "-";
-    finalKey += std::string(key).substr(12, 4);
-    
-    for(auto& c : finalKey) {
-        c = toupper(c);
-    }
-    
-    return finalKey;
-}
-
-int GetTrialRemainingHours() {
-    std::ifstream trialFile(TRIAL_FILE);
-    if (!trialFile.good()) return 0;
-    
-    std::string encryptedData;
-    std::getline(trialFile, encryptedData);
-    trialFile.close();
-    
-    std::string decrypted = XorEncrypt(encryptedData, ENCRYPTION_KEY);
-    size_t separator = decrypted.find('|');
-    if (separator == std::string::npos) return 0;
-    
-    time_t expiryTime = std::stoll(decrypted.substr(separator + 1));
-    time_t currentTime = time(nullptr);
-    
-    int remaining = (expiryTime - currentTime) / 3600;
-    return remaining > 0 ? remaining : 0;
-}
-
-// ==================== VARIABLES ====================
 bool main_thread_flag = true;
 int abs_ScreenX = 0;
 int abs_ScreenY = 0;
@@ -236,13 +91,7 @@ bool showFloatingButton = true;
 ImVec2 floatingButtonPos = ImVec2(100, 300);
 ImVec2 floatingButtonSize = ImVec2(85, 85);
 bool isDraggingFloating = false;
-ImVec2 dragOffset = ImVec2(0, 0);
-int floatingTargetMode = 0;
-
-// Trial state
-bool isTrialValid = false;
-char activationKeyInput[256] = "";
-bool showActivationPopup = true;
+int floatingTargetMode = 0; // 0 = Buff, 1 = Boss
 
 std::string fshy(uintptr_t address)
 {
@@ -515,7 +364,6 @@ void DrawFloatingRetriButton() {
     }
     
     if (isHovering) {
-        bgColor.Value.w = 255;
         if (floatingTargetMode == 0) {
             bgColor = IM_COL32(255, 160, 20, 255);
         } else {
@@ -534,99 +382,7 @@ void DrawFloatingRetriButton() {
     draw->AddText(textPos, IM_COL32(255, 255, 255, 255), label);
 }
 
-void DrawActivationPopup() {
-    if (!showActivationPopup) return;
-    
-    ImGui::SetNextWindowSize(ImVec2(400, 250), ImGuiCond_Always);
-    ImGui::SetNextWindowPos(ImVec2(abs_ScreenX/2 - 200, abs_ScreenY/2 - 125), ImGuiCond_Always);
-    
-    ImGui::Begin("Trial Activation", &showActivationPopup, 
-                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | 
-                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-    
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4(1.0f, 0.84f, 0.0f, 1.0f), "VOLKS MLBB External Cheat");
-    ImGui::Separator();
-    ImGui::Spacing();
-    
-    std::string hwid = GetDeviceHWID();
-    ImGui::Text("Your HWID:");
-    ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "%s", hwid.c_str());
-    
-    ImGui::Spacing();
-    ImGui::Text("Activation Key:");
-    ImGui::InputText("##actkey", activationKeyInput, 256);
-    
-    ImGui::Spacing();
-    
-    if (ImGui::Button("Activate", ImVec2(-1, 35))) {
-        if (ActivateTrial(std::string(activationKeyInput))) {
-            isTrialValid = true;
-            showActivationPopup = false;
-        } else {
-            ImGui::OpenPopup("Invalid Key");
-        }
-    }
-    
-    if (ImGui::BeginPopupModal("Invalid Key", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Invalid activation key!");
-        ImGui::Spacing();
-        if (ImGui::Button("OK", ImVec2(120, 0))) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-    
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), 
-                       "Contact admin to get activation key");
-    
-    ImGui::End();
-}
-
-void DrawTrialInfo() {
-    int remainingHours = GetTrialRemainingHours();
-    if (remainingHours <= 0) {
-        isTrialValid = false;
-        showActivationPopup = true;
-        return;
-    }
-    
-    int days = remainingHours / 24;
-    int hours = remainingHours % 24;
-    
-    char info[128];
-    if (days > 0) {
-        sprintf(info, "TRIAL: %d day(s) %d hour(s) remaining", days, hours);
-    } else {
-        sprintf(info, "TRIAL: %d hour(s) remaining", hours);
-    }
-    
-    ImVec2 textSize = ImGui::CalcTextSize(info);
-    ImDrawList* draw = ImGui::GetForegroundDrawList();
-    
-    draw->AddRectFilled(ImVec2(abs_ScreenX/2 - textSize.x/2 - 10, 10),
-                        ImVec2(abs_ScreenX/2 + textSize.x/2 + 10, 40),
-                        IM_COL32(0, 0, 0, 180), 8.0f);
-    
-    ImColor textColor;
-    if (remainingHours < 24) {
-        textColor = IM_COL32(255, 100, 100, 255);
-    } else {
-        textColor = IM_COL32(100, 255, 100, 255);
-    }
-    
-    draw->AddText(ImVec2(abs_ScreenX/2 - textSize.x/2, 18), textColor, info);
-}
-
 void DrawMonster(ImDrawList *Draw) {
-    if (!isTrialValid) {
-        return;
-    }
-    
-    DrawTrialInfo();
-    
     if (autoRetribution) {
         ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(255, 255, 255, 180), 16);
         ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(0, 0, 0, 255), 16, 2.5f);
@@ -911,11 +667,6 @@ void DrawMonster(ImDrawList *Draw) {
     }
 
 void Layout_tick_UI() {
-    if (!isTrialValid) {
-        DrawActivationPopup();
-        return;
-    }
-    
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
     static ImVec2 windowSize = ImVec2(715, 400);
@@ -1034,65 +785,4 @@ void Layout_tick_UI() {
     if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
         if (theme == 0) ImGui::StyleColorsDark();
         if (theme == 1) ImGui::StyleColorsLight();
-        if (theme == 2) ImGui::StyleColorsClassic();
-    }
-    
-    static float opacity = 1.0f;
-    ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
-    ImGui::GetStyle().Alpha = opacity;
-    
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Text(oxorany("Actions:"));
-    ImGui::Spacing();
-    
-    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 50))) {
-        exit(0);
-    }
-    
-    ImGui::EndTabItem();
-}
-
-        ImGui::EndTabBar();
-    }
-
-    DrawMonster(ImGui::GetForegroundDrawList());
-    
-    g_window = ImGui::GetCurrentWindow();
-    ImGui::End();
-}
-
-__attribute__((visibility("default"))) int main(int argc, char *argv[]) {
-    pid = pidof(oxorany("com.mobile.legends:UnityKillsMe"));
-    g_pid = pid;
-    libbase = GetBase(oxorany("libcsharp.so"));
-    printf("Lib: %p \n", libbase);
-    screen_config();
-    ::abs_ScreenX = (displayInfo.height > displayInfo.width ? displayInfo.height : displayInfo.width);
-    ::abs_ScreenY = (displayInfo.height < displayInfo.width ? displayInfo.height : displayInfo.width);
-    ::native_window_screen_x = (displayInfo.height > displayInfo.width ? displayInfo.height : displayInfo.width);
-    ::native_window_screen_y = (displayInfo.height > displayInfo.width ? displayInfo.height : displayInfo.width);
-    if (!initGUI_draw(native_window_screen_x, native_window_screen_y, true)) {
-        return -1;
-    }
-    Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
-    ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 25.0f;
-    ImGui::StyleColorsClassic();
-    
-    isTrialValid = CheckTrial();
-    
-    while (main_thread_flag) {
-        if (isTrialValid) {
-            MonsterRetribution();
-            CheckAndTriggerRetribution();
-        }
-        drawBegin();
-        Layout_tick_UI();
-        drawEnd();
-        usleep(250);
-    }
-    shutdown();
-    Touch_Close();
-    return 0;
-}
+        if (theme == 2
