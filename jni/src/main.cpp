@@ -77,8 +77,8 @@ long libbase = 0;
 
 bool lastRetriTriggered[20] = {false};
 bool autoRetribution = false;
-bool AutoRetributionBuff = false;  // Red & Blue Buff
-bool AutoRetributionBoss = false;  // Lord & Turtle
+bool AutoRetributionBuff = false;
+bool AutoRetributionBoss = false;
 bool AutoRetributionRed = false;
 bool AutoRetributionBlue = false;
 bool AutoRetributionLord = false;
@@ -113,7 +113,7 @@ struct String {
 };
 
 uintptr_t GetMainCamera() {
-    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470); // typeinfo (GetMainCamera)
+    auto main_cam = Read<uintptr_t>(libbase + 0x75dc470);
     if (!main_cam)
         return 0;
     auto main_cam2 = Read<uintptr_t>(main_cam + 0xb8);
@@ -187,19 +187,19 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18); // libbase
+    uintptr_t BattleManager = getPtr641(libbase + 0x7641e18);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
     if(!BattleManager) return;
-    Oneself = getPtr641(BattleManager + 0x50); // m_LocalPlayerShow
+    Oneself = getPtr641(BattleManager + 0x50);
     if(!Oneself) return;
 
     Vector3 MyPosition;
-    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition)); // 0x294 (m_vCachePosition)
+    vm_readv(Oneself + 0x294, &MyPosition, sizeof(MyPosition));
     
     MonsterCount = 0;
-    uintptr_t Showmonster = getPtr641(BattleManager + 0x80); // 0x80 (m_ShowMonsters)
+    uintptr_t Showmonster = getPtr641(BattleManager + 0x80);
     if (Showmonster != 0) {
         int monsterCount = Read<int>(Showmonster + 0x18);
         uintptr_t monsterDataPtr = ReadPtr(Showmonster + 0x10);
@@ -209,11 +209,11 @@ void MonsterRetribution() {
             for (int i = 0; i < monsterCount && monsterfound < 20; i++) {
                 uintptr_t currentMonsterPtr = ReadPtr(monsterDataArray + (i * 8));
                 if (currentMonsterPtr == 0) continue;
-                int monsterID = Read<int>(currentMonsterPtr + 0x194); // m_ID (ShowEntity)
-                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac); // m_Hp (ShowEntity)
-                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0); // m_HpMax (ShowEntity)
-                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294); // m_vCachePosition (ShowEntity)
-                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd); // m_bDeath (ShowEntity)
+                int monsterID = Read<int>(currentMonsterPtr + 0x194);
+                int monsterHP = Read<int>(currentMonsterPtr + 0x1ac);
+                int monsterMaxHP = Read<int>(currentMonsterPtr + 0x1b0);
+                Vector3 monsterPos = Read<Vector3>(currentMonsterPtr + 0x294);
+                uint8_t deadFlag = Read<uint8_t>(currentMonsterPtr + 0xcd);
                 bool mDead = (deadFlag != 0);
                 std::string mName = MonsterToString(monsterID);
                 if (mName.empty()) {
@@ -244,8 +244,8 @@ int CalculateRetriDamage(int Level, int KillWild) {
 
 void CheckAndTriggerRetribution() {
     if (!autoRetribution || !Oneself || MonsterCount <= 0) return;
-    int myLevel = Read<int>(Oneself + 0x198); // _KillWildTimes (LogicPlayer)
-    int killWild = Read<int>(Oneself + 0xA38); // m_Level (ShowEntity)
+    int myLevel = Read<int>(Oneself + 0x198);
+    int killWild = Read<int>(Oneself + 0xA38);
     int retriDmg = CalculateRetriDamage(myLevel, killWild);
     for (int i = 0; i < MonsterCount; i++) {
         if (!monster[i].isValid || monster[i].isDead) {
@@ -256,10 +256,10 @@ void CheckAndTriggerRetribution() {
             lastRetriTriggered[i] = false;
             continue;
         }
-        int id = Read<int>(monster[i].address + 0x194); // m_ID (ShowEntity}
+        int id = Read<int>(monster[i].address + 0x194);
         bool isTarget = false;
-        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;  // Lord & Turtle
-        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;  // Red & Blue Buff
+        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;
+        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;
         if (!isTarget) {
             lastRetriTriggered[i] = false;
             continue;
@@ -284,21 +284,21 @@ void DrawMonster(ImDrawList *Draw) {
     if (abs_ScreenX < abs_ScreenY) return;
     
     float lineSize = abs_ScreenY / 432;
-    long a1 = getPtr641(libbase + 0x7641e18); // libbase
+    long a1 = getPtr641(libbase + 0x7641e18);
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
-    size_t m_LocalPlayerShow = 0x50; // BattleManager
-    size_t m_ShowPlayers = 0x78; // BattleManager
-    size_t m_ShowMonsters = 0x80; // BattleManager
+    size_t m_LocalPlayerShow = 0x50;
+    size_t m_ShowPlayers = 0x78;
+    size_t m_ShowMonsters = 0x80;
     
-    size_t m_iType = 0x80; // ShowEntity
-    size_t m_Hp = 0x1ac; // ShowEntity
-    size_t m_HpMax = 0x1b0; // ShowEntity
-    size_t m_bDeath = 0xcd; // ShowEntity
-    size_t m_bSameCampType = 0x2b1; // ShowEntity
-    size_t m_vCachePosition = 0x294; // ShowEntity
-    size_t m_HeroName = 0x8d8; // ShowPlayer
+    size_t m_iType = 0x80;
+    size_t m_Hp = 0x1ac;
+    size_t m_HpMax = 0x1b0;
+    size_t m_bDeath = 0xcd;
+    size_t m_bSameCampType = 0x2b1;
+    size_t m_vCachePosition = 0x294;
+    size_t m_HeroName = 0x8d8;
     
     long selfp = getPtr641(a32 + m_LocalPlayerShow);
     
@@ -321,7 +321,7 @@ void DrawMonster(ImDrawList *Draw) {
         if (is_team) {
             continue;
         }
-        auto HeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
+        auto HeroID = Read<int>(Objaddr + 0x194);
 
         auto death = Read<bool>(Objaddr + m_bDeath);
         if (death) {
@@ -457,7 +457,7 @@ void DrawMonster(ImDrawList *Draw) {
                 continue;
             }
 
-            auto mHeroID = Read<int>(Objaddr + 0x194); // m_ID (ShowEntity)
+            auto mHeroID = Read<int>(Objaddr + 0x194);
             auto type = Read<int>(Objaddr + m_iType);
             
             auto death = Read<bool>(Objaddr + m_bDeath);
@@ -562,30 +562,21 @@ void DrawMonster(ImDrawList *Draw) {
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
     
-    // ===== PERUBAHAN: AKTIFKAN SCROLLBAR =====
-    // Hapus ImGuiWindowFlags_NoScrollbar agar scrollbar muncul
-    // Tetap bisa resize
-    
-    static ImVec2 windowSize = ImVec2(600, 450);
+    static ImVec2 windowSize = ImVec2(600, 350);
     static bool isResizing = false;
     static ImVec2 resizeStartSize;
     static ImVec2 resizeStartPos;
     
-    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 350), ImVec2(700, 600));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 300), ImVec2(700, 500));
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
     ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
     
-    // ===== PERUBAHAN: AKTIFKAN SCROLLBAR DI SINI =====
-    // Jangan set ScrollbarY = false, biarkan ImGui mengelolanya
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window) {
-        // Hanya disable scrollbar X (horizontal), Y tetap aktif
         window->ScrollbarX = false;
-        // Biarkan window->ScrollbarY tetap otomatis
     }
     
-    // ========== RESIZE HANDLE MANUAL (tanpa segitiga indicator) ==========
     ImVec2 windowPos = ImGui::GetWindowPos();
     ImVec2 currentWindowSize = ImGui::GetWindowSize();
     ImVec2 bottomRight = ImVec2(windowPos.x + currentWindowSize.x, windowPos.y + currentWindowSize.y);
@@ -593,9 +584,6 @@ void Layout_tick_UI() {
     float resizeHandleSize = 20.0f;
     ImVec2 resizeHandleMin = ImVec2(bottomRight.x - resizeHandleSize, bottomRight.y - resizeHandleSize);
     ImVec2 resizeHandleMax = bottomRight;
-    
-    // JANGAN GAMBAR apapun di sini - biar ga ada indicator visual
-    // TAPI tetap deteksi area untuk resize
     
     ImVec2 mousePos = ImGui::GetMousePos();
     if (ImGui::IsMouseHoveringRect(resizeHandleMin, resizeHandleMax)) {
@@ -611,17 +599,15 @@ void Layout_tick_UI() {
         ImVec2 delta = ImVec2(mousePos.x - resizeStartPos.x, mousePos.y - resizeStartPos.y);
         ImVec2 newSize = ImVec2(
             std::max(500.0f, resizeStartSize.x + delta.x),
-            std::max(350.0f, resizeStartSize.y + delta.y)
+            std::max(300.0f, resizeStartSize.y + delta.y)
         );
         newSize.x = std::min(700.0f, newSize.x);
-        newSize.y = std::min(600.0f, newSize.y);
+        newSize.y = std::min(500.0f, newSize.y);
         windowSize = newSize;
-        // Force resize window
         ImGui::SetWindowSize(windowSize);
     } else if (!ImGui::IsMouseDown(0)) {
         isResizing = false;
     }
-    // ========== END RESIZE HANDLE ==========
     
     ImGui::Separator();
 
@@ -707,14 +693,17 @@ void Layout_tick_UI() {
         ImGui::Text(oxorany("Actions:"));
         ImGui::Spacing();
         
-        if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+        if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 30))) {
             exit(0);
         }
+        
+        ImGui::Spacing();
         
         ImGui::EndTabItem();
     }
 
     ImGui::EndTabBar();
+    ImGui::Spacing();
 }
 
     DrawMonster(ImGui::GetForegroundDrawList());
@@ -740,13 +729,10 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     
-    // Setup gaya UI - AKTIFKAN scrollbar kembali
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 15.0f;      // Aktifkan scrollbar dengan ukuran standar
-    ImGui::GetStyle().ScrollbarRounding = 12.0f;  // Berikan rounded effect pada scrollbar
-    ImGui::GetStyle().GrabRounding = 5.0f;        // Rounded effect pada grab handle
-    
-    // Hilangkan segitiga resize bawaan ImGui
+    ImGui::GetStyle().ScrollbarSize = 15.0f;
+    ImGui::GetStyle().ScrollbarRounding = 12.0f;
+    ImGui::GetStyle().GrabRounding = 5.0f;
     ImGui::GetStyle().WindowBorderSize = 1.0f;
     
     while (main_thread_flag) {
@@ -757,7 +743,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
         drawEnd();
         usleep(250);
     }
-    
+
     shutdown();
     Touch_Close();
     return 0;
