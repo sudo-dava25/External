@@ -77,6 +77,8 @@ long libbase = 0;
 
 bool lastRetriTriggered[20] = {false};
 bool autoRetribution = false;
+bool AutoRetributionBuff = false;  // Red & Blue Buff
+bool AutoRetributionBoss = false;  // Lord & Turtle
 bool AutoRetributionRed = false;
 bool AutoRetributionBlue = false;
 bool AutoRetributionLord = false;
@@ -660,16 +662,14 @@ void Layout_tick_UI() {
             ImGui::Separator();
             
             ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
-            ImGui::SliderFloat(oxorany("Retri Position X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-            ImGui::SliderFloat(oxorany("Retri Position Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
 
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Text(oxorany("Target Selection:"));
-            ImGui::Checkbox(oxorany("Red Buff"), &AutoRetributionRed);
-            ImGui::Checkbox(oxorany("Blue Buff"), &AutoRetributionBlue);
-            ImGui::Checkbox(oxorany("Lord"), &AutoRetributionLord);
-            ImGui::Checkbox(oxorany("Turtle"), &AutoRetributionTurtle);
+            ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
+            ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
             
             ImGui::EndTabItem();
         }
@@ -731,7 +731,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 20.0f;
+    ImGui::GetStyle().ScrollbarSize = 30.0f;
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
