@@ -673,9 +673,6 @@ void Layout_tick_UI() {
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-    ImGui::BeginChild("SettingsChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
-    
     ImGui::Spacing();
     ImGui::Text(oxorany("UI Settings:"));
     ImGui::Separator();
@@ -701,8 +698,6 @@ void Layout_tick_UI() {
         exit(0);
     }
     
-    ImGui::EndChild();
-    ImGui::PopStyleVar();
     ImGui::EndTabItem();
 }
 
