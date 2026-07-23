@@ -91,7 +91,7 @@ float retriTouchY = 661.0f;
 // Floating Button State
 bool showFloatingButton = true;
 ImVec2 floatingButtonPos = ImVec2(100, 300);  // Posisi awal
-ImVec2 floatingButtonSize = ImVec2(50, 50);   // Ukuran button
+ImVec2 floatingButtonSize = ImVec2(200, 200);   // Ukuran button
 bool isDraggingFloating = false;
 ImVec2 dragOffset = ImVec2(0, 0);
 
@@ -747,8 +747,8 @@ void Layout_tick_UI() {
             ImGui::Separator();
             
             ImGui::Checkbox(oxorany("Enable Auto Retri"), &autoRetribution);
-            ImGui::SliderFloat(oxorany("Retri Touch X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
-            ImGui::SliderFloat(oxorany("Retri Touch Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Pos X"), &retriTouchX, 0.0f, 3000.0f, "%.0f");
+            ImGui::SliderFloat(oxorany("Retri Pos Y"), &retriTouchY, 0.0f, 1500.0f, "%.0f");
 
             ImGui::Spacing();
             ImGui::Separator();
