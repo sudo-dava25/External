@@ -686,6 +686,8 @@ void Layout_tick_UI() {
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+            
             ImGui::Spacing();
             ImGui::Text(oxorany("UI Settings:"));
             ImGui::Separator();
@@ -711,6 +713,7 @@ void Layout_tick_UI() {
                 exit(0);
             }
             
+            ImGui::PopStyleVar();
             ImGui::EndTabItem();
         }
 
@@ -738,7 +741,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 13.0f;
+    ImGui::GetStyle().ScrollbarSize = 8.0f;
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
