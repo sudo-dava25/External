@@ -445,7 +445,8 @@ void DrawMonster(ImDrawList *Draw) {
 
             if (!s.empty()) {
                 auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
-                绘制字体描边(23.5, HeroPos.X - (textSize1.x / 2), HeroPos.Y + 40.0f, ImColor(248,248,255), s.c_str());
+                float offsetX = (activeCount == 1) ? 0.0f : 32.5f;
+绘制字体描边(23.5, HeroPos.X - (textSize1.x / 2) + offsetX, HeroPos.Y + 40.0f, ImColor(248,248,255), s.c_str());
             }
         }
     }
