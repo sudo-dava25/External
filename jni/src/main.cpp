@@ -60,7 +60,6 @@ bool drawMPostion = true;
 bool drawMHealth = true;
 bool drawMDistance = true;
 bool drawMName = true;
-bool drawAlertUnderAttack = true;
 bool iconhero = true;
 bool drawESPBox = false;
 bool drawHealthBar = true;
@@ -83,8 +82,6 @@ bool AutoRetributionRed = false;
 bool AutoRetributionBlue = false;
 bool AutoRetributionLord = false;
 bool AutoRetributionTurtle = false;
-bool AutoRetributionCrab = false;
-bool AutoRetributionLito = false;
 
 float retriTouchX = 1575.0f;
 float retriTouchY = 661.0f;
@@ -170,7 +167,7 @@ bool bMonster(int iValue) {
 
 void Touch_Tap(int x, int y) {
      Touch_Down((float)x, (float)y);
-     usleep(30000);  // Reduced from 80ms to 30ms for faster response
+     usleep(20000);  // Reduced from 80ms to 30ms for faster response
      Touch_Up();
 }
 
@@ -265,8 +262,6 @@ void CheckAndTriggerRetribution() {
         if (AutoRetributionLord && (id == 2002)) isTarget = true;
         if (AutoRetributionTurtle && (id == 2003)) isTarget = true;
         if (AutoRetributionBlue && (id == 2005)) isTarget = true;
-        if (AutoRetributionLito && (id == 2056)) isTarget = true;
-        if (AutoRetributionCrab && (id == 2005)) isTarget = true;
         if (AutoRetributionRed && (id == 2004)) isTarget = true;        
         if (!isTarget) {
             lastRetriTriggered[i] = false;
@@ -628,7 +623,6 @@ void Layout_tick_UI() {
             
             ImGui::Checkbox(oxorany("Line"), &drawMHealth);
             ImGui::Checkbox(oxorany("Hero Icon"), &iconhero);
-            ImGui::Checkbox(oxorany("Alert Lord Under Attack"), &drawAlertUnderAttack);
             
             ImGui::Spacing();
             ImGui::Separator();
@@ -687,13 +681,9 @@ void Layout_tick_UI() {
             ImGui::Checkbox(oxorany("Blue Buff"), &AutoRetributionBlue);
             ImGui::Checkbox(oxorany("Lord"), &AutoRetributionLord);
             ImGui::Checkbox(oxorany("Turtle"), &AutoRetributionTurtle);
-            ImGui::Checkbox(oxorany("Crab"), &AutoRetributionCrab);
-            ImGui::Checkbox(oxorany("Lito"), &AutoRetributionLito);
             
             ImGui::EndTabItem();
         }
-
-
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
             ImGui::Spacing();
@@ -747,14 +737,15 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
         return -1;
     }
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
-    ImGui::GetStyle().WindowRounding = 25.0f;
+    ImGui::GetStyle().WindowRounding = 20.0f;
+    ImGui::GetStyle().ScrollbarSize = 8.0f;
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
         drawBegin();
         Layout_tick_UI();
         drawEnd();
-        usleep(500);  // Reduced from 1000us to 500us for faster polling
+        usleep(300);  // Reduced from 1000us to 500us for faster polling
     }
     shutdown();
     Touch_Close();
