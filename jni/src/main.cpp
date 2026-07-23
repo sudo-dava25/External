@@ -170,7 +170,7 @@ bool bMonster(int iValue) {
 
 void Touch_Tap(int x, int y) {
      Touch_Down((float)x, (float)y);
-     usleep(80000);
+     usleep(30000);  // Reduced from 80ms to 30ms for faster response
      Touch_Up();
 }
 
@@ -244,9 +244,9 @@ void MonsterRetribution() {
 
 int CalculateRetriDamage(int Level, int KillWild) {
     if (KillWild < 5) {
-        return 600 + (Level - 1) * 80;
+        return 600 + (Level - 1) * 90;
     } else {
-        return (600 + (Level - 1) * 80) + (300 + (Level - 1) * 40);
+        return (600 + (Level - 1) * 90) + (400 + (Level - 1) * 45);
     }
 }
 
@@ -453,6 +453,7 @@ void DrawMonster(ImDrawList *Draw) {
         }
     }
 
+    // ESP MONSTER - Hanya tampil jika enableESPMonster = true
     if (enableESPMonster) {
         long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
         uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
@@ -757,7 +758,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
         drawBegin();
         Layout_tick_UI();
         drawEnd();
-        usleep(1000);
+        usleep(500);  // Reduced from 1000us to 500us for faster polling
     }
     shutdown();
     Touch_Close();
