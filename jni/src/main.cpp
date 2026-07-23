@@ -193,7 +193,7 @@ int MonsterCount = 0;
 uintptr_t Oneself;
 
 void MonsterRetribution() {
-    uintptr_t BattleManager = getPtr641(libbase + 0x75dc470);
+    uintptr_t BattleManager = getPtr641(libbase + 0x664d190);
     BattleManager = getPtr641(BattleManager + 0xB8);
     BattleManager = getPtr641(BattleManager);
 
@@ -427,26 +427,30 @@ void DrawMonster(ImDrawList *Draw) {
 
         if (drawDistance || drawHealth || drawHeroName) {
             std::string s;
+            int activeCount = 0;
             
             if (drawDistance) {
                 s += std::to_string((int)Distance);
                 s += "m";
+                activeCount++;
             }
             
             if (drawHealth) {
                 if (!s.empty()) s += " | ";
                 s += "Health: "+ std::to_string((int)Health);
+                activeCount++;
             }
             
             if (drawHeroName) {
                 if (!s.empty()) s += " | ";
                 s += fshy(Read<uintptr_t>(Objaddr + m_HeroName));
+                activeCount++;
             }
 
             if (!s.empty()) {
                 auto textSize1 = ImGui::CalcTextSize(s.c_str(), 0, 29);
                 float offsetX = (activeCount == 1) ? 0.0f : 35.0f;
-绘制字体描边(23.5, HeroPos.X - (textSize1.x / 2) + offsetX, HeroPos.Y + 40.0f, ImColor(248,248,255), s.c_str());
+                绘制字体描边(23.5, HeroPos.X - (textSize1.x / 2) + offsetX, HeroPos.Y + 40.0f, ImColor(248,248,255), s.c_str());
             }
         }
     }
