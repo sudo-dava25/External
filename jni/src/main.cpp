@@ -560,60 +560,28 @@ void DrawMonster(ImDrawList *Draw) {
 }
 
 void Layout_tick_UI() {
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize;
     
-    static ImVec2 windowSize = ImVec2(600, 350);
-    static bool isResizing = false;
-    static ImVec2 resizeStartSize;
-    static ImVec2 resizeStartPos;
+    // Ukuran default
+    static ImVec2 windowSize = ImVec2(600, 400);
+    static int currentTab = -1;
     
-    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 300), ImVec2(700, 500));
-    ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
 
     ImGui::Begin(oxorany("VOLKS External @volksive"), nullptr, window_flags);
-    
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    if (window) {
-        window->ScrollbarX = false;
-    }
-    
-    ImVec2 windowPos = ImGui::GetWindowPos();
-    ImVec2 currentWindowSize = ImGui::GetWindowSize();
-    ImVec2 bottomRight = ImVec2(windowPos.x + currentWindowSize.x, windowPos.y + currentWindowSize.y);
-    
-    float resizeHandleSize = 20.0f;
-    ImVec2 resizeHandleMin = ImVec2(bottomRight.x - resizeHandleSize, bottomRight.y - resizeHandleSize);
-    ImVec2 resizeHandleMax = bottomRight;
-    
-    ImVec2 mousePos = ImGui::GetMousePos();
-    if (ImGui::IsMouseHoveringRect(resizeHandleMin, resizeHandleMax)) {
-        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNWSE);
-        if (ImGui::IsMouseDown(0)) {
-            isResizing = true;
-            resizeStartSize = currentWindowSize;
-            resizeStartPos = mousePos;
-        }
-    }
-    
-    if (isResizing && ImGui::IsMouseDown(0)) {
-        ImVec2 delta = ImVec2(mousePos.x - resizeStartPos.x, mousePos.y - resizeStartPos.y);
-        ImVec2 newSize = ImVec2(
-            std::max(500.0f, resizeStartSize.x + delta.x),
-            std::max(300.0f, resizeStartSize.y + delta.y)
-        );
-        newSize.x = std::min(700.0f, newSize.x);
-        newSize.y = std::min(500.0f, newSize.y);
-        windowSize = newSize;
-        ImGui::SetWindowSize(windowSize);
-    } else if (!ImGui::IsMouseDown(0)) {
-        isResizing = false;
-    }
     
     ImGui::Separator();
 
     if (ImGui::BeginTabBar("####MainTabs", ImGuiTabBarFlags_None)) {
 
+    // TAB ESP - Ukuran: 550x350
     if (ImGui::BeginTabItem(oxorany("ESP"))) {
+        if (currentTab != 0) {
+            currentTab = 0;
+            windowSize = ImVec2(550, 350);
+            ImGui::SetWindowSize(windowSize);
+        }
+        
         ImGui::Spacing();
         ImGui::Text(oxorany("ESP Options:"));
         ImGui::Separator();
@@ -631,7 +599,14 @@ void Layout_tick_UI() {
         ImGui::EndTabItem();
     }
 
+    // TAB ESP Monster - Ukuran: 600x420
     if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
+        if (currentTab != 1) {
+            currentTab = 1;
+            windowSize = ImVec2(600, 420);
+            ImGui::SetWindowSize(windowSize);
+        }
+        
         ImGui::Spacing();
         ImGui::Text(oxorany("Monster ESP Options:"));
         ImGui::Separator();
@@ -653,7 +628,14 @@ void Layout_tick_UI() {
         ImGui::EndTabItem();
     }
 
+    // TAB Retribution - Ukuran: 650x480
     if (ImGui::BeginTabItem(oxorany("Retribution"))) {
+        if (currentTab != 2) {
+            currentTab = 2;
+            windowSize = ImVec2(650, 480);
+            ImGui::SetWindowSize(windowSize);
+        }
+        
         ImGui::Spacing();
         ImGui::Text(oxorany("Auto Retribution:"));
         ImGui::Separator();
@@ -671,7 +653,14 @@ void Layout_tick_UI() {
         ImGui::EndTabItem();
     }
 
+    // TAB Settings - Ukuran: 580x400
     if (ImGui::BeginTabItem(oxorany("Settings"))) {
+        if (currentTab != 3) {
+            currentTab = 3;
+            windowSize = ImVec2(580, 400);
+            ImGui::SetWindowSize(windowSize);
+        }
+        
         ImGui::Spacing();
         ImGui::Text(oxorany("UI Settings:"));
         ImGui::Separator();
@@ -693,7 +682,7 @@ void Layout_tick_UI() {
         ImGui::Text(oxorany("Actions:"));
         ImGui::Spacing();
         
-        if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 30))) {
+        if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 35))) {
             exit(0);
         }
         
@@ -730,10 +719,11 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     
     ImGui::GetStyle().WindowRounding = 25.0f;
-    ImGui::GetStyle().ScrollbarSize = 15.0f;
-    ImGui::GetStyle().ScrollbarRounding = 12.0f;
-    ImGui::GetStyle().GrabRounding = 5.0f;
+    ImGui::GetStyle().ScrollbarSize = 0.0f;
     ImGui::GetStyle().WindowBorderSize = 1.0f;
+    ImGui::GetStyle().WindowMinSize = ImVec2(500, 300);
+    ImGui::GetStyle().FramePadding = ImVec2(6, 6);
+    ImGui::GetStyle().ItemSpacing = ImVec2(8, 6);
     
     while (main_thread_flag) {
         MonsterRetribution();
