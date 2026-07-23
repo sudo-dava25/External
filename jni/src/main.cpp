@@ -260,10 +260,8 @@ void CheckAndTriggerRetribution() {
         }
         int id = Read<int>(monster[i].address + 0x194); // m_ID (ShowEntity}
         bool isTarget = false;
-        if (AutoRetributionLord && (id == 2002)) isTarget = true;
-        if (AutoRetributionTurtle && (id == 2003)) isTarget = true;
-        if (AutoRetributionBlue && (id == 2005)) isTarget = true;
-        if (AutoRetributionRed && (id == 2004)) isTarget = true;        
+        if (AutoRetributionBoss && (id == 2002 || id == 2003)) isTarget = true;  // Lord & Turtle
+        if (AutoRetributionBuff && (id == 2004 || id == 2005)) isTarget = true;  // Red & Blue Buff
         if (!isTarget) {
             lastRetriTriggered[i] = false;
             continue;
@@ -676,7 +674,7 @@ void Layout_tick_UI() {
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-            ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 0.0f);
+            ImGui::BeginChild("SettingsChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
             
             ImGui::Spacing();
             ImGui::Text(oxorany("UI Settings:"));
@@ -703,7 +701,8 @@ void Layout_tick_UI() {
                 exit(0);
             }
             
-            ImGui::PopStyleVar(2);
+            ImGui::EndChild();
+            ImGui::PopStyleVar();
             ImGui::EndTabItem();
         }
 
