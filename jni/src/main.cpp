@@ -88,14 +88,15 @@ bool AutoRetributionTurtle = false;
 float retriTouchX = 1575.0f;
 float retriTouchY = 661.0f;
 
-// Fast Change Target Mode
-enum RetriTargetMode {
-    RETRI_TARGET_MANUAL = 0,
-    RETRI_TARGET_BUFF_ONLY,
-    RETRI_TARGET_BOSS_ONLY
-};
+// Floating Button State
+bool showFloatingButton = true;
+ImVec2 floatingButtonPos = ImVec2(100, 300);  // Posisi awal
+ImVec2 floatingButtonSize = ImVec2(50, 50);   // Ukuran button
+bool isDraggingFloating = false;
+ImVec2 dragOffset = ImVec2(0, 0);
 
-RetriTargetMode currentRetriMode = RETRI_TARGET_MANUAL;
+// Target mode: 0 = Buff, 1 = Boss
+int floatingTargetMode = 0;  // Default: Buff
 
 std::string fshy(uintptr_t address)
 {
@@ -287,11 +288,98 @@ void CheckAndTriggerRetribution() {
     }
 }
 
+void DrawFloatingRetriButton() {
+    if (!showFloatingButton || !autoRetribution) return;
+    
+    ImDrawList* draw = ImGui::GetForegroundDrawList();
+    ImGuiIO& io = ImGui::GetIO();
+    
+    ImVec2 buttonMin = floatingButtonPos;
+    ImVec2 buttonMax = ImVec2(floatingButtonPos.x + floatingButtonSize.x, 
+                               floatingButtonPos.y + floatingButtonSize.y);
+    
+    // Deteksi klik/drag
+    ImVec2 mousePos = io.MousePos;
+    bool isHovering = (mousePos.x >= buttonMin.x && mousePos.x <= buttonMax.x &&
+                       mousePos.y >= buttonMin.y && mousePos.y <= buttonMax.y);
+    
+    // Handle drag
+    if (isHovering && ImGui::IsMouseDown(0) && !isDraggingFloating) {
+        isDraggingFloating = true;
+        dragOffset = ImVec2(mousePos.x - floatingButtonPos.x, mousePos.y - floatingButtonPos.y);
+    }
+    
+    if (isDraggingFloating && ImGui::IsMouseDown(0)) {
+        floatingButtonPos.x = mousePos.x - dragOffset.x;
+        floatingButtonPos.y = mousePos.y - dragOffset.y;
+        
+        // Batasi agar tidak keluar layar
+        if (floatingButtonPos.x < 0) floatingButtonPos.x = 0;
+        if (floatingButtonPos.y < 0) floatingButtonPos.y = 0;
+        if (floatingButtonPos.x > abs_ScreenX - floatingButtonSize.x) 
+            floatingButtonPos.x = abs_ScreenX - floatingButtonSize.x;
+        if (floatingButtonPos.y > abs_ScreenY - floatingButtonSize.y) 
+            floatingButtonPos.y = abs_ScreenY - floatingButtonSize.y;
+    }
+    
+    if (!ImGui::IsMouseDown(0)) {
+        // Klik (bukan drag) - switch target
+        if (isHovering && !isDraggingFloating) {
+            floatingTargetMode = (floatingTargetMode == 0) ? 1 : 0;
+            
+            if (floatingTargetMode == 0) {
+                // Buff Only
+                AutoRetributionBuff = true;
+                AutoRetributionBoss = false;
+            } else {
+                // Boss Only
+                AutoRetributionBuff = false;
+                AutoRetributionBoss = true;
+            }
+        }
+        isDraggingFloating = false;
+    }
+    
+    // Warna berdasarkan mode
+    ImColor bgColor, textColor;
+    const char* label;
+    
+    if (floatingTargetMode == 0) {
+        bgColor = IM_COL32(255, 140, 0, 220);   // Orange untuk Buff
+        textColor = IM_COL32(255, 255, 255, 255);
+        label = "BUFF";
+    } else {
+        bgColor = IM_COL32(255, 0, 0, 220);     // Red untuk Boss
+        textColor = IM_COL32(255, 255, 255, 255);
+        label = "BOSS";
+    }
+    
+    // Glow effect (opsional)
+    if (isHovering) {
+        draw->AddCircleFilled(ImVec2(floatingButtonPos.x + floatingButtonSize.x/2, 
+                                      floatingButtonPos.y + floatingButtonSize.y/2), 
+                               35.0f, IM_COL32(255, 255, 255, 40), 32);
+    }
+    
+    // Draw button background (rounded)
+    draw->AddRectFilled(buttonMin, buttonMax, bgColor, floatingButtonSize.x / 2);
+    draw->AddRect(buttonMin, buttonMax, IM_COL32(255, 255, 255, 180), floatingButtonSize.x / 2, 0, 2.0f);
+    
+    // Draw label
+    ImVec2 textSize = ImGui::CalcTextSize(label);
+    ImVec2 textPos = ImVec2(floatingButtonPos.x + (floatingButtonSize.x - textSize.x) / 2,
+                             floatingButtonPos.y + (floatingButtonSize.y - textSize.y) / 2);
+    draw->AddText(textPos, textColor, label);
+}
+
 void DrawMonster(ImDrawList *Draw) {
     if (autoRetribution) {
         ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(255, 255, 255, 180), 16);
         ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(retriTouchX, retriTouchY), 18.0f, IM_COL32(0, 0, 0, 255), 16, 2.5f);
     }
+
+    // Draw floating retri button
+    DrawFloatingRetriButton();
 
     if (abs_ScreenX < abs_ScreenY) return;
     
@@ -664,64 +752,16 @@ void Layout_tick_UI() {
 
             ImGui::Spacing();
             ImGui::Separator();
-            
-            // Fast Change Target Section
-            ImGui::Text(oxorany("Fast Change Target:"));
-            ImGui::Spacing();
-            
-            // Buff Only Button
-            if (ImGui::Button(oxorany("Buff Only"), ImVec2(-1, 40))) {
-                currentRetriMode = RETRI_TARGET_BUFF_ONLY;
-                AutoRetributionBuff = true;
-                AutoRetributionBoss = false;
-            }
-            
-            // Boss Only Button
-            if (ImGui::Button(oxorany("Boss Only"), ImVec2(-1, 40))) {
-                currentRetriMode = RETRI_TARGET_BOSS_ONLY;
-                AutoRetributionBuff = false;
-                AutoRetributionBoss = true;
-            }
+            ImGui::Text(oxorany("Target Selection:"));
+            ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff);
+            ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss);
             
             ImGui::Spacing();
             ImGui::Separator();
-            
-            // Mode indicator
-            const char* modeText = "Manual";
-            ImColor modeColor = IM_COL32(150, 150, 150, 255);
-            
-            switch (currentRetriMode) {
-                case RETRI_TARGET_BUFF_ONLY:
-                    modeText = "MODE: Buff Only";
-                    modeColor = IM_COL32(255, 140, 0, 255);  // Orange
-                    break;
-                case RETRI_TARGET_BOSS_ONLY:
-                    modeText = "MODE: Boss Only";
-                    modeColor = IM_COL32(255, 0, 0, 255);    // Red
-                    break;
-                case RETRI_TARGET_MANUAL:
-                default:
-                    modeText = "MODE: Manual (Checkbox)";
-                    modeColor = IM_COL32(255, 255, 0, 255);  // Yellow
-                    break;
-            }
-            
-            ImGui::TextColored(ImVec4(modeColor.Value.x, modeColor.Value.y, modeColor.Value.z, 1.0f), 
-                               oxorany("%s"), modeText);
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Manual Target Selection:"));
-            
-            // Checkbox manual
-            bool manualChanged = false;
-            if (ImGui::Checkbox(oxorany("Blue & Red Buff"), &AutoRetributionBuff)) manualChanged = true;
-            if (ImGui::Checkbox(oxorany("Lord & Turtle"), &AutoRetributionBoss)) manualChanged = true;
-            
-            // Jika user mengubah checkbox manual, switch ke mode manual
-            if (manualChanged) {
-                currentRetriMode = RETRI_TARGET_MANUAL;
-            }
+            ImGui::Text(oxorany("Floating Button:"));
+            ImGui::Checkbox(oxorany("Show Floating Button"), &showFloatingButton);
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), 
+                               oxorany("Tap: Switch Target | Drag: Move"));
             
             ImGui::EndTabItem();
         }
