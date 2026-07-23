@@ -673,38 +673,38 @@ void Layout_tick_UI() {
         }
 
         if (ImGui::BeginTabItem(oxorany("Settings"))) {
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-            ImGui::BeginChild("SettingsChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar);
-            
-            ImGui::Spacing();
-            ImGui::Text(oxorany("UI Settings:"));
-            ImGui::Separator();
-            
-            static int theme = 0;
-            const char* themes[] = { "Dark", "Light", "Classic" };
-            if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
-                if (theme == 0) ImGui::StyleColorsDark();
-                if (theme == 1) ImGui::StyleColorsLight();
-                if (theme == 2) ImGui::StyleColorsClassic();
-            }
-            
-            static float opacity = 1.0f;
-            ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
-            ImGui::GetStyle().Alpha = opacity;
-            
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text(oxorany("Actions:"));
-            ImGui::Spacing();
-            
-            if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
-                exit(0);
-            }
-            
-            ImGui::EndChild();
-            ImGui::PopStyleVar();
-            ImGui::EndTabItem();
-        }
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+    ImGui::BeginChild("SettingsChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+    
+    ImGui::Spacing();
+    ImGui::Text(oxorany("UI Settings:"));
+    ImGui::Separator();
+    
+    static int theme = 0;
+    const char* themes[] = { "Dark", "Light", "Classic" };
+    if (ImGui::Combo(oxorany("Theme Gui"), &theme, themes, IM_ARRAYSIZE(themes))) {
+        if (theme == 0) ImGui::StyleColorsDark();
+        if (theme == 1) ImGui::StyleColorsLight();
+        if (theme == 2) ImGui::StyleColorsClassic();
+    }
+    
+    static float opacity = 1.0f;
+    ImGui::SliderFloat(oxorany("UI Opacity"), &opacity, 0.1f, 1.0f);
+    ImGui::GetStyle().Alpha = opacity;
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text(oxorany("Actions:"));
+    ImGui::Spacing();
+    
+    if (ImGui::Button(oxorany("Unload Cheat"), ImVec2(-1, 45))) {
+        exit(0);
+    }
+    
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::EndTabItem();
+}
 
         ImGui::EndTabBar();
     }
