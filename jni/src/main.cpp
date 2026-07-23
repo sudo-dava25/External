@@ -67,7 +67,8 @@ bool drawDistance = true;
 bool drawHealth = true;
 bool drawHeroName = true;
 
-bool enableESPMonster = false;
+
+
 bool drawMonsterName = true;
 bool drawMonsterDistance = true;
 bool drawMonsterHealth = true;
@@ -443,9 +444,8 @@ void DrawMonster(ImDrawList *Draw) {
         }
     }
     
-    if (enableESPMonster) {
-        long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
-        uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
+    long monster = getPtr641(getPtr641(a32+m_ShowMonsters)+0x10)+0x20;
+    uint stop_monster = Read<uint>(getPtr641(a32+m_ShowMonsters)+0x18);
         
         for (int i = 0; i < stop_monster; i++) {
             auto Objaddr = getPtr641(monster + ((i << 3) / 1));
@@ -559,7 +559,6 @@ void DrawMonster(ImDrawList *Draw) {
             }
         }
     }
-}
 
 void Layout_tick_UI() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
@@ -631,15 +630,11 @@ void Layout_tick_UI() {
         }
 
         if (ImGui::BeginTabItem(oxorany("ESP Monster"))) {
-            ImGui::Spacing();
-            ImGui::Checkbox(oxorany("Enable Monster ESP"), &enableESPMonster);
-            
-            ImGui::Spacing();
             ImGui::Separator();
             ImGui::Text(oxorany("Display Settings:"));
-            ImGui::Checkbox(oxorany("Show Monster Name"), &drawMonsterName);
-            ImGui::Checkbox(oxorany("Show Monster Distance"), &drawMonsterDistance);
-            ImGui::Checkbox(oxorany("Show Monster Health"), &drawMonsterHealth);
+            ImGui::Checkbox(oxorany("ESP Monster Name"), &drawMonsterName);
+            ImGui::Checkbox(oxorany("ESP Monster Distance"), &drawMonsterDistance);
+            ImGui::Checkbox(oxorany("ESP Monster Health"), &drawMonsterHealth);
             
             ImGui::Spacing();
             ImGui::Separator();
@@ -721,6 +716,7 @@ __attribute__((visibility("default"))) int main(int argc, char *argv[]) {
     Touch_Init(displayInfo.width, displayInfo.height, displayInfo.orientation, false);
     ImGui::GetStyle().WindowRounding = 25.0f;
     ImGui::GetStyle().ScrollbarSize = 25.0f;
+    ImGui::StyleColorsClassic();
     while (main_thread_flag) {
         MonsterRetribution();
         CheckAndTriggerRetribution();
