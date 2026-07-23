@@ -559,7 +559,7 @@ void RoomInfoList() {
     int playerCount = Read<int>(getPtr641((uintptr_t)LogicBattleManager + 0x78) + 0x18);
     if (playerCount <= 0 || !playersList) return;
 
-    long a1 = getPtr641(libbase + 0x664d190); // BattleManager base
+    long a1 = getPtr641(libbase + 0x7641e18); // BattleManager base
     long a2 = getPtr641((a1 + ((0x100 | 0xB8) & 0xFF)));
     long a32 = getPtr641((a2 << 1) >> 1);
 
@@ -586,7 +586,7 @@ void RoomInfoList() {
         uint32_t heroid = Read<uint32_t>(obj + 0x4C);
         int spellId = Read<int>(obj + 0x64);
         uint32_t rank = Read<uint32_t>(obj + 0x128);
-        uint32_t myth = Read<uint32_t>(obj + 0x1CC);
+        uint32_t myth = Read<uint32_t>(obj + 0x1d4);
         uint32_t camp = Read<uint32_t>(obj + 0x30);
 
         std::string hero = HeroToString(heroid);
@@ -612,7 +612,7 @@ void Layout_tick_UI() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(500, 350), ImVec2(700, 600));
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
 
-    ImGui::Begin(oxorany("ESP Controller"), nullptr, window_flags);
+    ImGui::Begin(oxorany("VOLKS | External"), nullptr, window_flags);
     
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     ImVec2 windowPos = ImGui::GetWindowPos();
